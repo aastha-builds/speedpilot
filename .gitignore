@@ -14,3 +14,4 @@ coverage/
 .wp-env-home/
 fixtures/wp/.wp-env.override.json
 fixtures/shopify/.shopify/
+fixtures/wp/.cache/
