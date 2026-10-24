@@ -1,5 +1,6 @@
 import { Command } from 'commander';
-import { ensureFixturePreview, shopifyAuditBackend } from '@speedpilot/shopify';
+import { ensureFixturePreview, shopifyAuditBackend, backupShopify, verifyShopifyBackup } from '@speedpilot/shopify';
+import { join } from 'node:path';
 import { beforeReport } from '@speedpilot/report';
 import {
   projectRoot,
@@ -12,6 +13,10 @@ import {
   setActiveSite,
   type Stage,
   auditSite,
+  hostFor,
+  backupWordPress,
+  restoreTest,
+  prepareWordPressStaging,
 } from '@speedpilot/core';
 
 function out(obj: unknown, json?: boolean) {
@@ -89,6 +94,77 @@ export function buildProgram(): Command {
       out(`Grade ${analysis.grade.grade ?? '-'}; ${analysis.findings.length} findings; phone score ${analysis.ceiling.current ?? '-'} -> reachable ${analysis.ceiling.reachable ?? '-'}`);
       for (const f of analysis.findings.slice(0, 10)) out(`  ${f.priority.toFixed(1).padStart(6)}  ${f.checkId.padEnd(8)} ${f.tier.padEnd(6)} ${f.title}`);
       for (const w of written) out(`Report: ${w.html}${w.pdf ? `, ${w.pdf}` : ''}, ${w.json}, ${w.markdown}`);
+    });
+
+  const backup = program.command('backup').description('backups (SPEC 5)');
+  backup
+    .argument('[site]')
+    .option('--stage <stage>', 'production or staging', 'production')
+    .option('--skip-uploads', 'large media: checksum manifest for uploads instead of archiving them')
+    .action(async (site: string | undefined, o: { stage: Stage; skipUploads?: boolean }) => {
+      if (!site) return backup.help();
+      const cfg = loadSite(root(), site);
+      const store = new Store(root());
+      try {
+        store.upsertSite(cfg);
+        const stage: Stage = cfg.local ? 'local' : o.stage;
+        if (cfg.platform === 'wordpress') {
+          const r = await backupWordPress(cfg, stage, { host: hostFor(root(), cfg, stage), store, backupsDir: join(root(), 'backups'), skipUploads: o.skipUploads });
+          out(`Backup ${r.id} (${r.manifest.disk.mode}, ${r.manifest.artifacts.map((a) => a.name).join(', ')}) in ${r.dir}. Next: speedpilot backup verify ${site} --id ${r.id}`);
+        } else {
+          const r = await backupShopify(root(), cfg, store, { backupsDir: join(root(), 'backups') });
+          out(`Backup ${r.id}: live ${r.manifest.liveThemeId}, backup theme ${r.manifest.backupThemeId}, work theme ${r.manifest.workThemeId}, git tag ${r.manifest.gitTag}.`);
+        }
+      } finally {
+        store.close();
+      }
+    });
+  backup
+    .command('verify <site>')
+    .description('restore test: restore into a fresh local WordPress and run the smoke flows (Shopify: checksums and preview)')
+    .requiredOption('--id <backup-id>')
+    .option('--keep', 'keep the restored copy running')
+    .action(async (site: string, o: { id: string; keep?: boolean }) => {
+      const cfg = loadSite(root(), site);
+      const store = new Store(root());
+      try {
+        if (cfg.platform === 'wordpress') {
+          const r = await restoreTest(root(), cfg, store, o.id, { keep: o.keep });
+          out(`${r.verified ? 'VERIFIED' : 'NOT VERIFIED'}: ${o.id} restored at ${r.url}; pages ${r.smoke.pages.filter((p) => p.pass).length}/${r.smoke.pages.length}, flows ${r.smoke.flows.filter((f) => f.pass).length}/${r.smoke.flows.length}`);
+          if (!r.verified) process.exitCode = 1;
+        } else {
+          const r = await verifyShopifyBackup(cfg, store, o.id);
+          out(`${r.verified ? 'VERIFIED' : 'NOT VERIFIED'}: ${r.mismatches.length} file mismatches, ${r.liquidErrors.length} Liquid errors`);
+          if (!r.verified) process.exitCode = 1;
+        }
+      } finally {
+        store.close();
+      }
+    });
+
+  program
+    .command('staging')
+    .description('staging (SPEC 5.2, 5.3)')
+    .argument('<action>', 'prepare')
+    .argument('<site>')
+    .option('--port <port>', 'local staging port', '8897')
+    .action(async (action: string, site: string, o: { port: string }) => {
+      if (action !== 'prepare') throw new Error('usage: speedpilot staging prepare <site>');
+      const cfg = loadSite(root(), site);
+      const store = new Store(root());
+      try {
+        if (cfg.platform === 'wordpress') {
+          const r = await prepareWordPressStaging(root(), cfg, store, { port: Number(o.port) });
+          out(`Staging (${r.mode}) at ${r.url}: ${r.pass ? 'neutralized' : 'NEUTRALIZATION FAILED'}`);
+          for (const c of r.checks) out(`  ${c.pass ? 'OK  ' : 'FAIL'} ${c.name}${c.pass ? '' : ` (${c.detail})`}`);
+          if (!r.pass) process.exitCode = 1;
+        } else {
+          const r = await backupShopify(root(), cfg, store, { backupsDir: join(root(), 'backups') });
+          out(`Work theme ${r.manifest.workThemeId} ready (backup theme ${r.manifest.backupThemeId}). Preview: https://${r.manifest.store}/?preview_theme_id=${r.manifest.workThemeId}`);
+        }
+      } finally {
+        store.close();
+      }
     });
 
   program

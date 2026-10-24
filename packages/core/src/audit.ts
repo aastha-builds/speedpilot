@@ -5,7 +5,7 @@ import { loadSite, secret, type SiteConfig } from './config/site.js';
 import { Store, type Stage } from './store/store.js';
 import { buildInventory, classify, type Inventory, type InventoryUrl, type Template } from './collectors/inventory.js';
 import { runLighthouse, type LighthouseResult, type LabMetrics } from './collectors/lighthouse.js';
-import { launchBrowser, releaseBrowser, openSession, setConsent, type Device } from './collectors/browser.js';
+import { launchBrowser, releaseBrowser, openSession, setConsent, PREVIEW_BAR_BLOCK, isThemePreview, type Device } from './collectors/browser.js';
 import { collectPage, type PageEvidence } from './collectors/page.js';
 import { interactionsFor, measureInteractions, INTERACTIONS, type InpResult } from './collectors/interactions.js';
 import { cruxRecord, cruxHistory, pageSpeedInsights, isPublicUrl, type FieldResult, type PsiResult } from './collectors/google.js';
@@ -147,7 +147,9 @@ export async function auditSite(root: string, siteName: string, opts: AuditOptio
             store.addMetric({ runId: run.id, url: u.url, device, source: 'lab', name: 'accessibility', median: r.accessibility, min: r.accessibility, max: r.accessibility, samples: [] });
             if (r.runs.length >= 5 && (r.range.score.max ?? 0) - (r.range.score.min ?? 0) > 10) notes.push(`MEAS-01: ${u.url} ${device} scores spread more than 10 points; rerun on a quiet machine.`);
           }
-          const session = await openSession(browser, { device, local, mutationAllowlist: local ? [/.*/] : [] });
+          const preview = isThemePreview(u.url);
+          if (preview && !notes.some((n) => n.startsWith('Theme preview'))) notes.push('Theme preview URLs: preview-bar requests were blocked and these numbers are indicative; final numbers come from the published theme.');
+          const session = await openSession(browser, { device, local, mutationAllowlist: local ? [/.*/] : [], block: preview ? PREVIEW_BAR_BLOCK : undefined });
           try {
             const ev = await collectPage(session, u.url, device, {
               outDir: run.dir,

@@ -335,7 +335,7 @@ const READONLY_WP = [
 
 const NEVER_WP = new Set(['eval', 'eval-file', 'shell']);
 
-const READONLY_SQL = /^\s*(select|show|explain|describe|desc)\b/i;
+const READONLY_SQL = /^\s*(select|show|explain|describe|desc|checksum\s+table)\b/i;
 const SQL_WRITE_WORDS = /\b(insert|update|delete|replace|drop|alter|create|truncate|rename|grant|revoke|lock|unlock|set|call|load|handler|do|into\s+outfile|into\s+dumpfile)\b/i;
 
 export function isReadOnlySql(sql) {

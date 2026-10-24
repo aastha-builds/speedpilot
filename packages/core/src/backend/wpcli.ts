@@ -33,7 +33,7 @@ const READONLY: string[][] = [
 
 export function isReadOnlySql(sql: string): boolean {
   const statements = sql.split(';').map((s) => s.trim()).filter(Boolean);
-  return statements.length > 0 && statements.every((s) => /^(select|show|explain|describe|desc)\b/i.test(s) && !/\b(insert|update|delete|replace|drop|alter|create|truncate|rename|grant|lock|set|into\s+outfile)\b/i.test(s.replace(/'[^']*'/g, "''")));
+  return statements.length > 0 && statements.every((s) => /^(select|show|explain|describe|desc|checksum)\b/i.test(s) && !/\b(insert|update|delete|replace|drop|alter|create|truncate|rename|grant|lock|set|into\s+outfile)\b/i.test(s.replace(/'[^']*'/g, "''")));
 }
 
 export function wpCommandIsReadOnly(args: string[]): boolean {

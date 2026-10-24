@@ -71,3 +71,20 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
 - Grades exactly as SPEC 9.4, capped by the safety result.
 - Before report (SPEC 9.1, 9.3): self-contained HTML with a plain-language first page, PDF (Playwright print), JSON
   and a Markdown summary; branding from site.yaml; anonymized mode. `speedpilot report before <site>`.
+
+## Phase 6: backup, restore test, staging and drift
+
+- WordPress backup: free-disk check first (`df`), written on the server only when 20% stays free, otherwise streamed
+  straight off it; database export with `--single-transaction --quick`, per-table row counts and checksums, files
+  without cache folders, SHA-256 per archive, manifest (versions, plugins, themes, key options, cron, mu-plugins,
+  drop-ins), AES-256-GCM encryption at rest (required for real sites), 30-day retention pruning.
+- Restore test into a fresh local Docker WordPress (checksums verified, URLs search-replaced with a dry run first) with
+  the smoke flows; only then is a backup marked verified. `speedpilot backup` and `speedpilot backup verify`.
+- Staging: SpeedPilot Staging Guard mu-plugin (no email, outgoing HTTP blocked except allowlisted hosts, only test-mode
+  or offline gateways, WooCommerce webhooks, WP-Cron and Action Scheduler paused, noindex, optional basic auth);
+  local staging clone from a verified backup or remote host staging; neutralization proven by checks.
+  `speedpilot staging prepare` (needs the staging-prep approval).
+- Shopify: theme library check (never deletes a theme), live theme pulled into git and tagged, backup and work theme
+  duplicates, manifest, verification (checksums plus Liquid-error-free preview), drift check, preview-bar blocking
+  with "indicative" labels. A fake store test double drives the same Shopify CLI commands.
+- Drift control for WordPress (plugins, themes, key options, theme file hash).

@@ -127,3 +127,10 @@ export async function setConsent(page: Page, state: 'granted' | 'denied'): Promi
   }
   return false;
 }
+
+/** Requests the Shopify preview bar makes; blocked during lab runs on theme previews (MEAS-06). */
+export const PREVIEW_BAR_BLOCK = ['/preview_bar', 'preview-bar', 'previewBarInjector', '/storefront/preview_bar', 'shopify-preview-bar'];
+
+export function isThemePreview(url: string): boolean {
+  return /[?&]preview_theme_id=\d+/.test(url);
+}
