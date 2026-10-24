@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+runs/*
+!runs/.gitkeep
+backups/
+*.sqlite
+*.sqlite-journal
+*.db
+coverage/
+.wp-env-home/
+fixtures/wp/.wp-env.override.json
+fixtures/shopify/.shopify/

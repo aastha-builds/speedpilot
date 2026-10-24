@@ -1,0 +1,28 @@
+{
+  "name": "speedpilot",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Speed optimizer for WordPress and Shopify: audit, X-ray, backup, fix one safe change at a time, verify, report.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "build": "tsc -b packages/core packages/xray packages/report packages/shopify packages/cli packages/mcp-server",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b packages/core packages/xray packages/report packages/shopify packages/cli packages/mcp-server --pretty",
+    "rules:generate": "node scripts/generate-rules.mjs",
+    "licenses:check": "node scripts/check-licenses.mjs",
+    "fixtures:wp": "node scripts/fixtures-wp.mjs",
+    "fixtures:shopify": "node scripts/fixtures-shopify.mjs",
+    "speedpilot": "node packages/cli/dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

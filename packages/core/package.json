@@ -1,0 +1,32 @@
+{
+  "name": "@speedpilot/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "better-sqlite3": "12.11.1",
+    "cheerio": "1.1.2",
+    "chrome-launcher": "1.2.2",
+    "lighthouse": "13.5.0",
+    "pino": "10.4.0",
+    "playwright-core": "1.63.0",
+    "third-party-web": "0.30.0",
+    "web-vitals": "5.3.0",
+    "yaml": "2.8.4",
+    "zod": "4.1.13"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "7.6.13"
+  }
+}

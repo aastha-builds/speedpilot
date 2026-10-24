@@ -1,0 +1,11 @@
+{
+  "name": "@speedpilot/xray",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "scripts": { "build": "tsc -b" },
+  "dependencies": { "@speedpilot/core": "workspace:*", "acorn": "8.19.0", "acorn-walk": "8.3.5", "postcss": "8.5.31", "php-parser": "3.7.0", "@shopify/liquid-html-parser": "2.10.2", "source-map": "0.7.6", "mockttp": "4.6.5" }
+}
