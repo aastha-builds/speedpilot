@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { ensureFixturePreview, shopifyAuditBackend, backupShopify, verifyShopifyBackup } from '@speedpilot/shopify';
 import { join } from 'node:path';
 import { beforeReport } from '@speedpilot/report';
+import { xrayRun } from '@speedpilot/xray';
 import {
   projectRoot,
   writeSiteYaml,
@@ -197,6 +198,26 @@ export function buildProgram(): Command {
         if (!c.pass) for (const e of c.evidence.slice(0, 4)) out(`       evidence: ${e}`);
       }
       if (r.result === 'FAIL') process.exitCode = 1;
+    });
+
+  program
+    .command('xray <site>')
+    .description('X-ray Engine: capture, static analysis and the Site Model (needs written permission, CLAUDE.md rule 16)')
+    .option('--stage <stage>', 'production or staging')
+    .option('--deep', 'mobile and desktop, consent states')
+    .option('--no-explore', 'skip safe-list exploration')
+    .option('--urls <list>', 'comma-separated URLs')
+    .action(async (site: string, o: { stage?: Stage; deep?: boolean; explore?: boolean; urls?: string }) => {
+      const cfg = loadSite(root(), site);
+      const preview = await ensureFixturePreview(root(), cfg);
+      try {
+        const x = await xrayRun(root(), site, { stage: o.stage, deep: o.deep, explore: o.explore, urls: o.urls?.split(',') });
+        const types = new Map<string, number>();
+        for (const n of x.model.nodes.values()) types.set(n.type, (types.get(n.type) ?? 0) + 1);
+        out(`X-ray ${x.runId}: ${x.captures.length} captures, ${x.model.nodes.size} nodes, ${x.model.edges.length} edges (${[...types.entries()].map(([k, v]) => `${v} ${k}`).join(', ')}). Site Model: ${x.dir}/xray/site-model.json`);
+      } finally {
+        await preview?.close();
+      }
     });
 
   program

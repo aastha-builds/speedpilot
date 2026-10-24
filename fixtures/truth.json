@@ -61,7 +61,7 @@
       { "match": "fonts.gstatic.com", "owner": "third-party:google-fonts" }
     ],
     "dependencies": [
-      { "id": "sh-dep-1", "script": "vendor-slider.js", "neededBy": ["inline:theme.liquid#themeSlider"], "when": "immediately" }
+      { "id": "sh-dep-1", "script": "vendor-slider.js", "neededBy": ["inline:contains:window.themeSlider"], "when": "immediately" }
     ],
     "handlers": [
       { "id": "sh-h-1", "selector": ".header__menu-toggle", "event": "click", "script": "/assets/theme.js", "slow": false }

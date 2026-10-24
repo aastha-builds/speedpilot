@@ -103,3 +103,23 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
   unsized banner (visual and CLS) are each caught.
 - Fixture fixes found by the harness: the planted late banner is now deterministic, the Shopify hero no longer covers
   the mobile menu button, and the local preview keeps one cart per visitor.
+
+## Phase 8: X-ray Engine, part 1 (capture, static analysis, Site Model)
+
+- CDP capture per URL, device and consent state: parsed scripts with sources and source maps (inline scripts matched
+  to their elements by content), requests with initiator stacks, CPU profile, Long Animation Frames, layout shifts,
+  function-level coverage with call counts and rule-level CSS usage per interaction state, behaviour hooks (globals
+  timeline, listener registrations, timers, MutationObservers, document.write, sync XHR), attached listeners
+  through DOMDebugger (handler names), safe-list exploration (full on staging, safe list only on production) and a
+  HAR with cookies, Authorization headers and tokens stripped.
+- Static analysis: scope-aware JavaScript (globals defined and read, immediate reads, jQuery plugins, selectors,
+  events, endpoints, timers, everything dynamic flagged), CSS (selectors, @font-face, @import, state classes), PHP on
+  the theme and plugins (enqueues, hooks, heavy patterns), the Liquid render tree with hot spots, and library
+  fingerprints with vulnerable-version signatures.
+- Site Model in SQLite (`xray_nodes`, `xray_edges`) and JSON, with evidence and confidence per edge and an owner for
+  every request, file, handler, hook and query. `speedpilot xray <site>`.
+- `fixtures/truth.json` validation: every planted dependency, handler, unused asset, slow query, Liquid hot spot and
+  leftover app snippet appears with the right owner; at least 95% of bytes per sample URL are attributed correctly.
+- Production exploration never clicks outside the safe list (trap-button test).
+- Licence check (`pnpm licenses:check`) in CI; GPL fails the build (test). One exception is recorded and needs the
+  owner's sign-off: axe-core (MPL-2.0), a transitive dependency of Lighthouse.

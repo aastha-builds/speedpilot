@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.19', cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: npx playwright install --with-deps chromium
+      - run: pnpm build
+      - name: Rules are generated from CHECKS.md
+        run: pnpm rules:generate && git diff --exit-code rules/
+      - name: Licence check (MIT, Apache-2.0, BSD or ISC only)
+        run: pnpm licenses:check
+      - name: Unit tests (fixture tests skip when the fixtures are down)
+        run: pnpm test
+  fixtures:
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.19', cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: npx playwright install --with-deps chromium
+      - run: pnpm build
+      - name: WordPress fixture
+        run: pnpm fixtures:wp up --engine compose
+      - name: Agent PHP tests (PHP 7.4, 8.3, 8.4)
+        run: pnpm test:php
+      - name: Full suite including X-ray CI gates (zero false safe verdicts)
+        run: pnpm test
