@@ -1,0 +1,35 @@
+id: wp-plugin-essential-addons-elementor
+platform: wordpress
+kind: plugin
+name: Essential Addons for Elementor
+category: page-builder-addon
+recognize:
+  handles:
+    - eael-general
+    - eael-load-more
+  paths:
+    - /wp-content/plugins/essential-addons-for-elementor-lite/
+  domains: []
+  globals:
+    - localize
+    - eael
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages using EA widgets
+  markers:
+    - '[class*="eael-"]'
+inlineDependencies: []
+safeOptimizations:
+  - change: setting:eael asset embedding per page
+    tier: T1
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - each EA widget on the page
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

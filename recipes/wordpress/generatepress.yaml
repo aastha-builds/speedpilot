@@ -1,0 +1,33 @@
+id: wp-theme-generatepress
+platform: wordpress
+kind: theme
+name: GeneratePress
+category: theme
+recognize:
+  handles:
+    - generate-menu
+    - generate-a11y
+    - generate-back-to-top
+  paths:
+    - /wp-content/themes/generatepress/
+  domains: []
+  globals:
+    - generatepressMenu
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - .inside-header
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - mobile menu flow
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

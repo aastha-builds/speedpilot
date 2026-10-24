@@ -1,0 +1,36 @@
+id: lib-library-swiper
+platform: both
+kind: library
+name: Swiper
+category: slider
+recognize:
+  handles:
+    - swiper
+  paths:
+    - swiper-bundle
+    - swiper.min.js
+  domains: []
+  globals:
+    - Swiper
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a carousel
+  markers:
+    - .swiper
+    - .swiper-container
+inlineDependencies: []
+safeOptimizations:
+  - change: remove-template:swiper
+    tier: T1
+    when: no .swiper on the page
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - carousel advances
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

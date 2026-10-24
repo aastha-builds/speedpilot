@@ -2,7 +2,8 @@ import { Command } from 'commander';
 import { ensureFixturePreview, shopifyAuditBackend, backupShopify, verifyShopifyBackup } from '@speedpilot/shopify';
 import { join } from 'node:path';
 import { beforeReport } from '@speedpilot/report';
-import { xrayRun } from '@speedpilot/xray';
+import { xrayRun, loadXray, explain, isSafe, simulate, graphHtml, diffModels, competitorBenchmark, updateLatestSummary } from '@speedpilot/xray';
+import { writeFileSync } from 'node:fs';
 import {
   projectRoot,
   writeSiteYaml,
@@ -200,24 +201,104 @@ export function buildProgram(): Command {
       if (r.result === 'FAIL') process.exitCode = 1;
     });
 
-  program
-    .command('xray <site>')
-    .description('X-ray Engine: capture, static analysis and the Site Model (needs written permission, CLAUDE.md rule 16)')
+  const xray = program.command('xray').description('X-ray Engine (SPEC.md 15): our own reverse-engineering engine. Deep analysis only with the client\'s written permission (CLAUDE.md rule 16).');
+  xray
+    .command('run <site>', { isDefault: true })
+    .description('capture, static analysis, Site Model, verdicts, waterfalls, costs and graph')
     .option('--stage <stage>', 'production or staging')
     .option('--deep', 'mobile and desktop, consent states')
     .option('--no-explore', 'skip safe-list exploration')
     .option('--urls <list>', 'comma-separated URLs')
-    .action(async (site: string, o: { stage?: Stage; deep?: boolean; explore?: boolean; urls?: string }) => {
+    .option('--rea', 'also run the optional REA cross-check (needs network; never decisive)')
+    .action(async (site: string, o: { stage?: Stage; deep?: boolean; explore?: boolean; urls?: string; rea?: boolean }) => {
       const cfg = loadSite(root(), site);
       const preview = await ensureFixturePreview(root(), cfg);
       try {
-        const x = await xrayRun(root(), site, { stage: o.stage, deep: o.deep, explore: o.explore, urls: o.urls?.split(',') });
+        const x = await xrayRun(root(), site, { stage: o.stage, deep: o.deep, explore: o.explore, urls: o.urls?.split(','), rea: o.rea });
         const types = new Map<string, number>();
         for (const n of x.model.nodes.values()) types.set(n.type, (types.get(n.type) ?? 0) + 1);
-        out(`X-ray ${x.runId}: ${x.captures.length} captures, ${x.model.nodes.size} nodes, ${x.model.edges.length} edges (${[...types.entries()].map(([k, v]) => `${v} ${k}`).join(', ')}). Site Model: ${x.dir}/xray/site-model.json`);
+        const count = (v: string) => x.verdicts.filter((y) => y.verdict === v).length;
+        out(`X-ray ${x.runId}: ${x.captures.length} captures, ${x.model.nodes.size} nodes, ${x.model.edges.length} edges (${[...types.entries()].map(([k, v]) => `${v} ${k}`).join(', ')}).
+Verdicts: ${count('safe')} safe, ${count('unsafe')} unsafe, ${count('unknown')} unknown. Slow handlers: ${x.summary.slowHandlers.length}. Unknown owners (recipe drafts): ${x.summary.unknownScripts.length}.
+Evidence: ${x.dir}/xray (site-model.json, verdicts.json, summary.json, graph.html, costs.html, waterfalls/)${x.rea ? `\nREA: ${x.rea.available ? `${x.rea.findings.length} findings (extra evidence only)` : x.rea.reason}` : ''}`);
       } finally {
         await preview?.close();
       }
+    });
+  xray
+    .command('explain <site> <ref>')
+    .description('what the Site Model knows about a script URL, handle or selector, with the reason for every verdict')
+    .option('--run <id>', 'X-ray run ID (default: latest)')
+    .option('--json', 'JSON output')
+    .action((site: string, ref: string, o: { run?: string; json?: boolean }) => {
+      const x = loadXray(root(), site, o.run);
+      const e = explain(x.ctx, ref, x.dir);
+      out(o.json ? e : `${e.text}\n\nEvidence: ${e.evidence.join(', ')}`, o.json);
+    });
+  xray
+    .command('safe <site>')
+    .description('verdict for one change: defer, async, delay, remove or remove-template')
+    .requiredOption('--change <change>', '"<type>:<target>", for example defer:jquery-core')
+    .option('--template <template>', 'template for remove-template')
+    .option('--run <id>', 'X-ray run ID (default: latest)')
+    .option('--json', 'JSON output')
+    .action((site: string, o: { change: string; template?: string; run?: string; json?: boolean }) => {
+      const x = loadXray(root(), site, o.run);
+      const v = isSafe(x.ctx, o.change, o.template);
+      out(o.json ? v : `${v.verdict.toUpperCase()}: ${v.explanation}\nEvidence: ${x.dir}/xray/verdicts.json`, o.json);
+      if (v.verdict !== 'safe') process.exitCode = 2;
+    });
+  xray
+    .command('simulate <site>')
+    .description('what-if simulation through a local rewriting proxy (results are labelled "simulated")')
+    .requiredOption('--change <change>', '"<type>:<target>": defer, async, remove, remove-template, delay, preload (url|as), lcp-eager')
+    .option('--urls <list>', 'comma-separated URLs (default: the first sample URL)')
+    .option('--runs <n>', 'runs per arm', '5')
+    .option('--json', 'JSON output')
+    .action(async (site: string, o: { change: string; urls?: string; runs: string; json?: boolean }) => {
+      const cfg = loadSite(root(), site);
+      if (!cfg.local && !cfg.permission.reverseEngineering) throw new Error('Simulation of a client site needs permission.reverseEngineering: true (CLAUDE.md rule 16).');
+      const preview = await ensureFixturePreview(root(), cfg);
+      try {
+        const urls = o.urls?.split(',') ?? [cfg.sampleUrls[0] ?? cfg.productionUrl];
+        const results = [];
+        for (const url of urls) results.push(await simulate(url, o.change, { outDir: join(root(), 'runs', site, `simulate-${Date.now()}`), runs: Number(o.runs), platform: cfg.platform, local: cfg.local }));
+        updateLatestSummary(root(), site, { simulations: results.map((r) => ({ change: r.change, gainMs: r.gain.lcpMs.median, ok: r.ok, issues: r.issues })) });
+        out(o.json ? results : results.map((r) => `SIMULATED ${r.change} on ${r.url}: LCP gain ${r.gain.lcpMs.median} ms (range ${r.gain.lcpMs.min} to ${r.gain.lcpMs.max}), TBT gain ${r.gain.tbtMs.median} ms, CLS gain ${r.gain.cls.median}. ${r.ok ? 'No breakage signals.' : `REV-08: ${r.issues.join('; ')}`}\nEvidence: ${r.evidenceDir}`).join('\n'), o.json);
+      } finally {
+        await preview?.close();
+      }
+    });
+  xray
+    .command('graph <site>')
+    .description('interactive dependency graph (HTML, Cytoscape.js)')
+    .requiredOption('--out <file>', 'output HTML file')
+    .option('--run <id>', 'X-ray run ID (default: latest)')
+    .action((site: string, o: { out: string; run?: string }) => {
+      const x = loadXray(root(), site, o.run);
+      writeFileSync(o.out, graphHtml(x.ctx.model, `X-ray ${site} ${x.runId}`));
+      out(`Graph written to ${o.out}`);
+    });
+  xray
+    .command('diff <site> <run-a> <run-b>')
+    .description('what changed between two X-ray runs')
+    .option('--json', 'JSON output')
+    .action((site: string, a: string, b: string, o: { json?: boolean }) => {
+      const xa = loadXray(root(), site, a);
+      const xb = loadXray(root(), site, b);
+      const d = diffModels(xa.ctx.model, xb.ctx.model, xa.summary?.verdicts ?? [], xb.summary?.verdicts ?? []);
+      out(o.json ? d : `Added: ${d.nodesAdded.length} nodes, removed: ${d.nodesRemoved.length}. Dependencies +${d.dependenciesAdded.length}/-${d.dependenciesRemoved.length}. Verdict changes: ${d.verdictChanges.map((v) => `${v.change} ${v.from}->${v.to}`).join(', ') || 'none'}.`, o.json);
+    });
+  xray
+    .command('benchmark <site>')
+    .description('competitor benchmark from public data and one normal visit per URL (REV-06)')
+    .requiredOption('--competitors <list>', 'comma-separated competitor URLs (3 to 5, confirmed by the client)')
+    .option('--json', 'JSON output')
+    .action(async (site: string, o: { competitors: string; json?: boolean }) => {
+      const cfg = loadSite(root(), site);
+      const t = await competitorBenchmark(cfg.productionUrl, o.competitors.split(','), { cruxKey: process.env.CRUX_API_KEY });
+      updateLatestSummary(root(), site, { competitors: t.rows.slice(1).map((r) => ({ url: r.url, lcp: r.field?.lcp, inp: r.field?.inp, notes: r.notes })) });
+      out(o.json ? t : `${t.markdown}\n\n${t.plainWords}`, o.json);
     });
 
   program

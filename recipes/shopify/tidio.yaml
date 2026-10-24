@@ -1,0 +1,33 @@
+id: shopify-app-tidio
+platform: shopify
+kind: app
+name: Tidio
+category: chat
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - code.tidio.co
+    - widget-v4.tidiochat.com
+  globals:
+    - tidioChatApi
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - "#tidio-chat"
+inlineDependencies: []
+safeOptimizations:
+  - change: delay:tidio
+    tier: T2
+neverDelay: false
+delayable: true
+knownBreakages: []
+verify:
+  - chat opens
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

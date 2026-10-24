@@ -25,6 +25,9 @@ export interface ExploreStep {
   reason: string;
   ran: boolean;
   error?: string;
+  /** performance.now() just before the click and after the settle wait (for handler timing). */
+  t0?: number;
+  t1?: number;
 }
 
 /** Words that mark an action as one SpeedPilot must never trigger on production. */
@@ -110,9 +113,11 @@ export async function explore(page: Page, stage: 'local' | 'staging' | 'producti
     steps.push(step);
     if (!allowed || steps.filter((s) => s.ran).length >= max) continue;
     try {
+      step.t0 = await page.evaluate(() => performance.now()).catch(() => undefined);
       await page.locator(c.selector).first().click({ timeout: 2000, noWaitAfter: true, trial: false });
       step.ran = true;
       await page.waitForTimeout(250);
+      step.t1 = await page.evaluate(() => performance.now()).catch(() => undefined);
       if (page.url().split('#')[0] !== startUrl.split('#')[0]) {
         await page.goBack({ waitUntil: 'load' }).catch(() => page.goto(startUrl, { waitUntil: 'load' }));
       }

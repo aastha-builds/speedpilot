@@ -1,0 +1,30 @@
+id: wp-plugin-rank-math
+platform: wordpress
+kind: plugin
+name: Rank Math
+category: seo
+recognize:
+  handles:
+    - rank-math
+  paths:
+    - /wp-content/plugins/seo-by-rank-math/
+  domains: []
+  globals:
+    - rankMath
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - none on the front end
+  markers: []
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - SEO guard
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

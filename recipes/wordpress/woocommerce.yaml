@@ -1,0 +1,68 @@
+id: wp-plugin-woocommerce
+platform: wordpress
+kind: plugin
+name: WooCommerce
+category: ecommerce
+recognize:
+  handles:
+    - woocommerce
+    - wc-add-to-cart
+    - wc-cart-fragments
+    - wc-blocks
+    - wc-order-attribution
+    - sourcebuster-js
+  paths:
+    - /wp-content/plugins/woocommerce/
+  domains: []
+  globals:
+    - wc_add_to_cart_params
+    - woocommerce_params
+    - wc_cart_fragments_params
+  classes:
+    - woocommerce
+    - add_to_cart_button
+versionsVerified: []
+needs:
+  pageTypes:
+    - shop
+    - product
+    - cart
+    - checkout
+    - account
+    - pages with product blocks or add-to-cart buttons
+  markers:
+    - .woocommerce
+    - form.cart
+    - .add_to_cart_button
+    - .wc-block-grid
+    - .woocommerce-cart-form
+    - .widget_shopping_cart_content
+    - .wc-block-mini-cart
+    - .cart-contents
+inlineDependencies:
+  - wc_add_to_cart_params
+  - woocommerce_params
+safeOptimizations:
+  - change: remove-template:wc-cart-fragments
+    tier: T2
+    when: no mini-cart in the header (WOO-01)
+  - change: defer:woocommerce
+    tier: T1
+    when: no inline code reads it before DOMContentLoaded
+neverDelay: false
+trackingHandles:
+  - wc-order-attribution
+  - sourcebuster-js
+delayable: false
+knownBreakages:
+  - Removing cart fragments breaks a live mini-cart count
+  - Never touch checkout scripts (rule 6)
+verify:
+  - add to cart
+  - cart
+  - checkout reaches payment step
+  - mini-cart count updates
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

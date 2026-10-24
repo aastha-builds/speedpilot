@@ -161,6 +161,24 @@ export const MIGRATIONS: string[] = [
   CREATE INDEX idx_findings_run ON findings(run_id);
   CREATE INDEX idx_metrics_run ON metrics(run_id, url, device);
   `,
+  // 2: X-ray shadow mode (SPEC.md 15.10): every verdict is logged and later compared with what verification found
+  `
+  CREATE TABLE xray_verdicts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    site_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    change TEXT NOT NULL,
+    change_type TEXT NOT NULL,
+    verdict TEXT NOT NULL CHECK (verdict IN ('safe','unsafe','unknown')),
+    confidence REAL NOT NULL,
+    recipe TEXT,
+    evidence_json TEXT NOT NULL DEFAULT '[]',
+    outcome TEXT CHECK (outcome IN ('passed','failed')),
+    outcome_reason TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  );
+  CREATE INDEX idx_xray_verdicts ON xray_verdicts(site_id, change);
+  `,
 ];
 
 export function openDb(file: string): DB {

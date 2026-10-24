@@ -1,0 +1,39 @@
+id: wp-theme-avada
+platform: wordpress
+kind: theme
+name: Avada
+category: theme
+recognize:
+  handles:
+    - avada-js
+    - fusion-scripts
+  paths:
+    - /wp-content/themes/Avada/
+    - /wp-content/plugins/fusion-builder/
+    - /wp-content/plugins/fusion-core/
+  domains: []
+  globals:
+    - avadaVars
+    - fusionJSVars
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - .fusion-builder-row
+inlineDependencies:
+  - avadaVars
+safeOptimizations:
+  - change: setting:avada performance wizard (no cache)
+    tier: T2
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - Avada elements
+  - mobile menu
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

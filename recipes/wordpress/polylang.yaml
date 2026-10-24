@@ -1,0 +1,31 @@
+id: wp-plugin-polylang
+platform: wordpress
+kind: plugin
+name: Polylang
+category: i18n
+recognize:
+  handles:
+    - pll_cookie_script
+  paths:
+    - /wp-content/plugins/polylang/
+  domains: []
+  globals: []
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - .lang-item
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - language switch flow
+  - hreflang unchanged
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

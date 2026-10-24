@@ -1,0 +1,33 @@
+id: shopify-app-weglot
+platform: shopify
+kind: app
+name: Weglot
+category: i18n
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - cdn.weglot.com
+  globals:
+    - Weglot
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - .weglot-container
+    - .country-selector
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: true
+delayable: false
+knownBreakages:
+  - Language switcher is a business flow; never delay
+verify:
+  - language switch flow
+  - hreflang
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

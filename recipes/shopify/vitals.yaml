@@ -1,0 +1,33 @@
+id: shopify-app-vitals
+platform: shopify
+kind: app
+name: Vitals
+category: all-in-one
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - appsolve.io
+    - vitals.co
+  globals:
+    - VITALS
+    - vitals
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - '[id^="vitals"]'
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Many features in one bundle; map each feature first
+verify:
+  - every Vitals feature the client uses
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

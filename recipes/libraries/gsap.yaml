@@ -1,0 +1,33 @@
+id: lib-library-gsap
+platform: both
+kind: library
+name: GSAP
+category: animation
+recognize:
+  handles: []
+  paths:
+    - gsap.min.js
+    - TweenMax
+  domains: []
+  globals:
+    - gsap
+    - TweenMax
+    - ScrollTrigger
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - animated pages
+  markers: []
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Entrance animations on the LCP element delay LCP (DOC-04)
+verify:
+  - visual diff
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

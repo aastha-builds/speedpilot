@@ -1,0 +1,33 @@
+id: shopify-app-yotpo
+platform: shopify
+kind: app
+name: Yotpo
+category: reviews
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - staticw2.yotpo.com
+    - cdn-widgetsrepository.yotpo.com
+  globals:
+    - yotpo
+    - Yotpo
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - product
+  markers:
+    - .yotpo
+    - .yotpo-widget-instance
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - review widget
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

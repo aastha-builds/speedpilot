@@ -1,0 +1,34 @@
+id: shopify-app-rebuy
+platform: shopify
+kind: app
+name: Rebuy
+category: upsell
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - rebuyengine.com
+    - cdn.rebuyengine.com
+  globals:
+    - Rebuy
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - product
+    - cart
+  markers:
+    - "[data-rebuy-id]"
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Cart drawer integrations
+verify:
+  - cart drawer
+  - upsell add to cart
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

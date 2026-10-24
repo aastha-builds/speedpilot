@@ -1,0 +1,35 @@
+id: wp-theme-astra
+platform: wordpress
+kind: theme
+name: Astra
+category: theme
+recognize:
+  handles:
+    - astra-theme-js
+    - astra-flexibility
+  paths:
+    - /wp-content/themes/astra/
+  domains: []
+  globals:
+    - astra
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - .ast-container
+inlineDependencies: []
+safeOptimizations:
+  - change: setting:astra load-google-fonts-locally
+    tier: T1
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Mobile menu needs astra-theme-js
+verify:
+  - mobile menu flow
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

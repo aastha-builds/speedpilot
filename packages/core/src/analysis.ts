@@ -96,6 +96,11 @@ export function runAnalysis(root: string, site: string, opts: { runId?: string; 
     let xray = opts.xray;
     const xrayPath = join(audit.dir, 'xray', 'summary.json');
     if (!xray && existsSync(xrayPath)) xray = JSON.parse(readFileSync(xrayPath, 'utf8')) as XraySummaryLite;
+    const latestXray = join(root, 'runs', site, 'xray-latest.json');
+    if (!xray && existsSync(latestXray)) {
+      const p = join((JSON.parse(readFileSync(latestXray, 'utf8')) as { dir: string }).dir, 'xray', 'summary.json');
+      if (existsSync(p)) xray = JSON.parse(readFileSync(p, 'utf8')) as XraySummaryLite;
+    }
     const prevAudit = store.listRuns(site).filter((r) => r.type === 'audit' && r.status === 'ok' && r.id !== audit.runId)[0];
     const previousVersions = prevAudit ? (JSON.parse(prevAudit.tool_versions_json) as Record<string, string>) : undefined;
     const rules = loadRules(paths.rules(root));

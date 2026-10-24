@@ -1,0 +1,35 @@
+id: wp-plugin-wpml
+platform: wordpress
+kind: plugin
+name: WPML
+category: i18n
+recognize:
+  handles:
+    - wpml-legacy-dropdown-0
+    - wpml-cookie
+  paths:
+    - /wp-content/plugins/sitepress-multilingual-cms/
+  domains: []
+  globals:
+    - wpml_cookies
+    - icl_vars
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page (language switcher)
+  markers:
+    - .wpml-ls
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Language switcher is a business flow (rule 6)
+verify:
+  - language switch flow
+  - hreflang unchanged
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

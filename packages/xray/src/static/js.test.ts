@@ -40,3 +40,20 @@ describe('static JS analysis', () => {
     expect(analyzeInlineHandler('openChat(event)').reads).toEqual(['openChat']);
   });
 });
+
+describe('global object aliases', () => {
+  it('treats reads through window aliases as global reads', () => {
+    expect(analyzeJs('var w = window; w.MutLib.go();').readsGlobals).toContain('MutLib');
+    expect(analyzeJs('(function (root) { root.Foo.bar(); })(window);').readsGlobals).toContain('Foo');
+    expect(analyzeJs('(function (e) { e.Bar = 1; })(this);').definesGlobals).toContain('Bar');
+    expect(analyzeJs('var g = typeof globalThis !== "undefined" ? globalThis : self; g.Baz();').readsGlobals).toContain('Baz');
+  });
+  it('does not confuse a shadowing inner variable with the alias', () => {
+    const f = analyzeJs('(function (e, t) { e.Cookies = t(); })(this, function () { function x(e, k) { return e[k]; } return { x: x }; });');
+    expect(f.definesGlobals).toContain('Cookies');
+    expect(f.dynamicReasons).not.toContain('dynamic global access (window[expr])');
+  });
+  it('flags computed access through an alias as dynamic', () => {
+    expect(analyzeJs("var w = window; w['Mut' + 'Lib'].go();").dynamicReasons).toContain('dynamic global access (window[expr])');
+  });
+});

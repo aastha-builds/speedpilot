@@ -1,0 +1,36 @@
+id: shopify-theme-horizon
+platform: shopify
+kind: theme
+name: Horizon-family themes
+category: theme
+recognize:
+  handles: []
+  paths:
+    - /cdn/shop/t/
+  domains: []
+  globals:
+    - Theme
+    - Shopify.theme
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers: []
+inlineDependencies: []
+safeOptimizations:
+  - change: liquid:image_tag widths and fetchpriority on the LCP image
+    tier: T1
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Theme globals read by app embeds
+verify:
+  - add to cart
+  - cart drawer
+  - search
+  - variant picker
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

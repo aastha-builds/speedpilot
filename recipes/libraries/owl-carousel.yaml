@@ -1,0 +1,30 @@
+id: lib-library-owl-carousel
+platform: both
+kind: library
+name: Owl Carousel
+category: slider
+recognize:
+  handles: []
+  paths:
+    - owl.carousel
+  domains: []
+  globals:
+    - jQuery.fn.owlCarousel
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a carousel
+  markers:
+    - .owl-carousel
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - carousel advances
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

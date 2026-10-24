@@ -1,0 +1,31 @@
+id: lib-library-aos
+platform: both
+kind: library
+name: AOS
+category: animation
+recognize:
+  handles: []
+  paths:
+    - aos.js
+  domains: []
+  globals:
+    - AOS
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - animated pages
+  markers:
+    - "[data-aos]"
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Content hidden until AOS runs
+verify:
+  - visual diff
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

@@ -1,0 +1,32 @@
+id: shopify-app-loox
+platform: shopify
+kind: app
+name: Loox
+category: reviews
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - loox.io
+    - loox.app
+  globals:
+    - loox_global_hash
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - product
+  markers:
+    - "#looxReviews"
+    - .loox-rating
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - review widget
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

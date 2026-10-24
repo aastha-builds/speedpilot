@@ -1,0 +1,32 @@
+id: shopify-theme-dawn
+platform: shopify
+kind: theme
+name: Dawn
+category: theme
+recognize:
+  handles: []
+  paths:
+    - /cdn/shop/t/
+  domains: []
+  globals:
+    - Shopify.theme
+    - theme
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers: []
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - add to cart
+  - cart drawer
+  - search
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

@@ -1,0 +1,33 @@
+id: lib-library-lodash
+platform: both
+kind: library
+name: lodash
+category: library
+recognize:
+  handles:
+    - lodash
+  paths:
+    - lodash.min.js
+    - lodash.js
+  domains: []
+  globals:
+    - _
+    - lodash
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - wherever a dependent loads
+  markers: []
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - WordPress core loads lodash for block scripts
+verify:
+  - console
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

@@ -1,0 +1,32 @@
+id: wp-theme-kadence
+platform: wordpress
+kind: theme
+name: Kadence
+category: theme
+recognize:
+  handles:
+    - kadence-navigation
+    - kadence-header
+  paths:
+    - /wp-content/themes/kadence/
+  domains: []
+  globals:
+    - kadenceConfig
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - .site-header-row
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - mobile menu flow
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

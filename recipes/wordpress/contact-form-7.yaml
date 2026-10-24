@@ -1,0 +1,44 @@
+id: wp-plugin-contact-form-7
+platform: wordpress
+kind: plugin
+name: Contact Form 7
+category: forms
+recognize:
+  handles:
+    - contact-form-7
+    - swv
+    - wpcf7-recaptcha
+    - google-recaptcha
+  paths:
+    - /wp-content/plugins/contact-form-7/
+  domains: []
+  globals:
+    - wpcf7
+    - swv
+  classes:
+    - wpcf7
+    - wpcf7-form
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a form
+  markers:
+    - .wpcf7
+    - form.wpcf7-form
+inlineDependencies:
+  - wpcf7
+safeOptimizations:
+  - change: remove-template:contact-form-7
+    tier: T1
+    when: the page has no .wpcf7 form (WPF-01)
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Removing on a page with a form breaks AJAX submit and validation
+verify:
+  - form submits a client-approved TEST entry on staging
+  - email arrives in the staging mail catcher
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

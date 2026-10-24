@@ -1,0 +1,37 @@
+id: shopify-app-klaviyo
+platform: shopify
+kind: app
+name: Klaviyo
+category: marketing
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - static.klaviyo.com
+    - static-tracking.klaviyo.com
+    - a.klaviyo.com
+  globals:
+    - klaviyo
+    - _learnq
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers: []
+inlineDependencies: []
+safeOptimizations:
+  - change: delay:klaviyo onsite forms
+    tier: T2
+    when: no signup form in the first screen
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Tracking events (identify, viewed product) must still fire
+verify:
+  - tracking guard
+  - signup form TEST entry
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

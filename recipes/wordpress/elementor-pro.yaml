@@ -1,0 +1,38 @@
+id: wp-plugin-elementor-pro
+platform: wordpress
+kind: plugin
+name: Elementor Pro
+category: page-builder
+recognize:
+  handles:
+    - elementor-pro-frontend
+    - elementor-pro-webpack-runtime
+    - pro-elements-handlers
+  paths:
+    - /wp-content/plugins/elementor-pro/
+  domains: []
+  globals:
+    - ElementorProFrontendConfig
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with Pro widgets, popups or theme builder templates
+  markers:
+    - .elementor-widget-form
+    - .elementor-location-popup
+inlineDependencies:
+  - ElementorProFrontendConfig
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Popups and forms depend on elementor-pro-frontend
+verify:
+  - popups
+  - forms
+  - theme builder header and footer
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

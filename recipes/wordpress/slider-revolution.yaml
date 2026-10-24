@@ -1,0 +1,47 @@
+id: wp-plugin-slider-revolution
+platform: wordpress
+kind: plugin
+name: Slider Revolution
+category: slider
+recognize:
+  handles:
+    - revmin
+    - tp-tools
+    - rs-plugin-settings
+    - sr7
+    - sr7page
+  paths:
+    - /wp-content/plugins/revslider/
+  domains: []
+  globals:
+    - RS_MODULES
+    - revapi
+    - SR7
+    - punchgs
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a slider
+  markers:
+    - rs-module
+    - sr7-module
+    - .rev_slider
+inlineDependencies:
+  - RS_MODULES
+  - SR7
+safeOptimizations:
+  - change: remove-template:revmin
+    tier: T1
+    when: no rs-module on the page
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Defer breaks inline module init code
+verify:
+  - slider renders and advances
+  - visual diff
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

@@ -163,3 +163,28 @@ export function liquidRenderTree(themeDir: string): RenderTree {
   }
   return { layout: 'layout/theme.liquid', templates, edges, files, hotSpots };
 }
+
+/**
+ * App snippets that are still rendered but reference app hosts the storefront no longer loads (SHA-03), from the
+ * X-ray's own captured requests. The Shopify backend runs the same check on its audit data.
+ */
+export function leftoverAppSnippets(themeDir: string, requests: Array<{ url: string; status: number | null }>): Array<{ file: string; app: string; hosts: string[] }> {
+  const dir = join(themeDir, 'snippets');
+  if (!existsSync(dir)) return [];
+  const host = (u: string) => {
+    try {
+      return new URL(u).host;
+    } catch {
+      return '';
+    }
+  };
+  const loaded = new Set(requests.filter((r) => (r.status ?? 0) > 0 && (r.status ?? 0) < 400).map((r) => host(r.url)));
+  const out: Array<{ file: string; app: string; hosts: string[] }> = [];
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.liquid'))) {
+    const name = f.replace(/\.liquid$/, '');
+    if (!/app|review|widget|upsell|popup|klaviyo|judge|yotpo|loox|privy/i.test(name)) continue;
+    const hosts = [...readFileSync(join(dir, f), 'utf8').matchAll(/https?:\/\/([a-z0-9.-]+)\//gi)].map((m) => m[1]!.toLowerCase()).filter((h) => !/shopify|googleapis|gstatic/.test(h));
+    if (hosts.length && hosts.every((h) => !loaded.has(h))) out.push({ file: `snippets/${f}`, app: name.replace(/-?(app|widget|snippet).*$/, '') || name, hosts });
+  }
+  return out;
+}

@@ -1,0 +1,33 @@
+id: shopify-app-shopify-inbox
+platform: shopify
+kind: app
+name: Shopify Inbox
+category: chat
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - cdn.shopify.com/extensions
+  globals:
+    - ShopifyChat
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - "#shopify-chat"
+inlineDependencies: []
+safeOptimizations:
+  - change: delay:shopify inbox
+    tier: T2
+    when: app embed supports it
+neverDelay: false
+delayable: true
+knownBreakages: []
+verify:
+  - chat opens
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

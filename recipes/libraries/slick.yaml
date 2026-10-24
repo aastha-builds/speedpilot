@@ -1,0 +1,32 @@
+id: lib-library-slick
+platform: both
+kind: library
+name: Slick
+category: slider
+recognize:
+  handles: []
+  paths:
+    - slick.min.js
+    - slick.js
+  domains: []
+  globals:
+    - jQuery.fn.slick
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a carousel
+  markers:
+    - .slick-slider
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - jQuery plugin; inline init code depends on it
+verify:
+  - carousel advances
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

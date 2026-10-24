@@ -5,7 +5,22 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "scripts": { "build": "tsc -b" },
-  "dependencies": { "@speedpilot/core": "workspace:*", "@speedpilot/xray": "workspace:*", "@speedpilot/report": "workspace:*", "@speedpilot/shopify": "workspace:*", "@modelcontextprotocol/sdk": "1.32.2", "zod": "4.1.13" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@speedpilot/core": "workspace:*",
+    "@speedpilot/xray": "workspace:*",
+    "@speedpilot/report": "workspace:*",
+    "@speedpilot/shopify": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.1.13",
+    "@speedpilot/engine": "workspace:*"
+  }
 }

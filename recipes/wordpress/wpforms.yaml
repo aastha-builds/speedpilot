@@ -1,0 +1,40 @@
+id: wp-plugin-wpforms
+platform: wordpress
+kind: plugin
+name: WPForms
+category: forms
+recognize:
+  handles:
+    - wpforms
+    - wpforms-validation
+    - wpforms-mailcheck
+  paths:
+    - /wp-content/plugins/wpforms-lite/
+    - /wp-content/plugins/wpforms/
+  domains: []
+  globals:
+    - wpforms
+    - wpforms_settings
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a form
+  markers:
+    - .wpforms-container
+    - form.wpforms-form
+inlineDependencies:
+  - wpforms_settings
+safeOptimizations:
+  - change: remove-template:wpforms
+    tier: T1
+    when: no .wpforms-container on the page
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - form TEST entry
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

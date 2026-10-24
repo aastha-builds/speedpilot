@@ -1,0 +1,28 @@
+id: wp-theme-hello-elementor
+platform: wordpress
+kind: theme
+name: Hello Elementor
+category: theme
+recognize:
+  handles:
+    - hello-theme-frontend
+  paths:
+    - /wp-content/themes/hello-elementor/
+  domains: []
+  globals: []
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers: []
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify: []
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

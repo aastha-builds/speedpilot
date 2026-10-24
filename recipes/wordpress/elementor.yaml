@@ -1,0 +1,54 @@
+id: wp-plugin-elementor
+platform: wordpress
+kind: plugin
+name: Elementor
+category: page-builder
+recognize:
+  handles:
+    - elementor-frontend
+    - elementor-webpack-runtime
+    - elementor-frontend-modules
+    - elementor-waypoints
+    - elementor-icons
+    - swiper
+  paths:
+    - /wp-content/plugins/elementor/
+    - /wp-content/uploads/elementor/
+  domains: []
+  globals:
+    - elementorFrontend
+    - elementorFrontendConfig
+    - elementorModules
+  classes:
+    - elementor
+    - elementor-widget
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages built with Elementor
+  markers:
+    - .elementor
+    - "[data-elementor-type]"
+inlineDependencies:
+  - elementorFrontendConfig
+safeOptimizations:
+  - change: setting:elementor_experiment-e_optimized_assets_loading
+    tier: T1
+    when: Elementor 3.x+
+  - change: setting:elementor_font_display=swap
+    tier: T1
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Deferring elementor-frontend breaks widgets that read elementorFrontend
+    before DOMContentLoaded
+  - Never enable Element Caching (rule 3)
+verify:
+  - popups open
+  - tabs and accordions
+  - sliders
+  - forms submit (TEST entry)
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

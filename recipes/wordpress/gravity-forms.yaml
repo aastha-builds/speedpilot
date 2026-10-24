@@ -1,0 +1,38 @@
+id: wp-plugin-gravity-forms
+platform: wordpress
+kind: plugin
+name: Gravity Forms
+category: forms
+recognize:
+  handles:
+    - gform_gravityforms
+    - gform_json
+    - gform_placeholder
+  paths:
+    - /wp-content/plugins/gravityforms/
+  domains: []
+  globals:
+    - gform
+    - gf_global
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a form
+  markers:
+    - .gform_wrapper
+inlineDependencies:
+  - gf_global
+  - gform
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Inline gform scripts depend on jQuery before DOMContentLoaded
+verify:
+  - form TEST entry
+  - conditional logic
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

@@ -1,0 +1,33 @@
+id: shopify-app-gempages
+platform: shopify
+kind: app
+name: GemPages
+category: page-builder
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - cdn.gempages.net
+    - d1um8515vdn9kb.cloudfront.net
+  globals:
+    - GEMVENDOR
+    - gemPageLibrary
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - GemPages pages
+  markers:
+    - "[data-gp-id]"
+    - .gryffeditor
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - page renders
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

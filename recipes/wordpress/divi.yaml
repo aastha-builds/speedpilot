@@ -1,0 +1,40 @@
+id: wp-theme-divi
+platform: wordpress
+kind: theme
+name: Divi
+category: theme
+recognize:
+  handles:
+    - divi-custom-script
+    - et-core-common
+    - et-builder-modules-script
+  paths:
+    - /wp-content/themes/Divi/
+    - /wp-content/et-cache/
+  domains: []
+  globals:
+    - et_pb_custom
+    - ET_Builder
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers:
+    - .et_pb_section
+inlineDependencies:
+  - et_pb_custom
+safeOptimizations:
+  - change: setting:et_divi dynamic css/js and critical css on
+    tier: T1
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Divi performance options already defer; never double-defer (rule 3)
+verify:
+  - Divi modules
+  - mobile menu
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

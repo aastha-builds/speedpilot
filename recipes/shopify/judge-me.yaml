@@ -1,0 +1,38 @@
+id: shopify-app-judge-me
+platform: shopify
+kind: app
+name: Judge.me
+category: reviews
+recognize:
+  handles: []
+  paths: []
+  domains:
+    - judge.me
+    - cdn.judge.me
+  globals:
+    - jdgm
+    - jdgmSettings
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - product
+    - collection badges
+  markers:
+    - .jdgm-widget
+    - .jdgm-preview-badge
+inlineDependencies: []
+safeOptimizations:
+  - change: delay:judge.me widget below the fold
+    tier: T2
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Star badges in the first screen shift if delayed
+verify:
+  - review widget renders
+  - JSON-LD unchanged
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

@@ -1,0 +1,40 @@
+id: wp-plugin-jetpack
+platform: wordpress
+kind: plugin
+name: Jetpack
+category: utility
+recognize:
+  handles:
+    - jetpack-stats
+    - jetpack-carousel
+    - jetpack-lazy-images
+    - jetpack-photon
+  paths:
+    - /wp-content/plugins/jetpack/
+  domains:
+    - stats.wp.com
+    - i0.wp.com
+    - c0.wp.com
+  globals:
+    - _stq
+    - jetpackCarouselStrings
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - varies by module
+  markers: []
+inlineDependencies: []
+safeOptimizations:
+  - change: setting:jetpack lazy images off when core lazy loading is used
+    tier: T2
+neverDelay: false
+delayable: false
+knownBreakages:
+  - stats.wp.com is analytics; never delay its base tag
+verify:
+  - tracking guard
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

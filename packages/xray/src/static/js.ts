@@ -53,6 +53,22 @@ interface Scope {
   parent?: Scope;
 }
 
+function resolveScope(scope: Scope, name: string, root: Scope): Scope {
+  for (let s: Scope | undefined = scope; s; s = s.parent) if (s.names.has(name)) return s;
+  return root;
+}
+
+/** Expressions that evaluate to the global object: window, self, globalThis, top-level `this`, or a branch of `a || b` / `c ? a : b`. */
+function globalish(n: acorn.Node | null | undefined, allowThis: boolean): boolean {
+  if (!n) return false;
+  if (n.type === 'Identifier') return GLOBAL_OBJECTS.has((n as acorn.Identifier).name);
+  if (n.type === 'ThisExpression') return allowThis;
+  if (n.type === 'LogicalExpression') return globalish((n as acorn.LogicalExpression).left, allowThis) || globalish((n as acorn.LogicalExpression).right, allowThis);
+  if (n.type === 'ConditionalExpression') return globalish((n as acorn.ConditionalExpression).consequent, allowThis) || globalish((n as acorn.ConditionalExpression).alternate, allowThis);
+  if (n.type === 'AssignmentExpression') return globalish((n as acorn.AssignmentExpression).right, allowThis);
+  return false;
+}
+
 function declared(scope: Scope, name: string): boolean {
   for (let s: Scope | undefined = scope; s; s = s.parent) if (s.names.has(name)) return true;
   return false;
@@ -171,6 +187,30 @@ export function analyzeJs(src: string): JsFacts {
   const topLevelNames = new Set<string>();
 
   const declareIn = (scope: Scope, names: string[]) => names.forEach((n) => scope.names.add(n));
+  // Aliases of the global object, bound to the scope that declares them: `var w = window`, `w = self`, and IIFE
+  // parameters bound to window, `(function (root) {})(window)` or UMD `(function (e, t) {})(this, ...)`.
+  const aliasScopes = new Map<string, Set<Scope>>();
+  const addAlias = (name: string, scope: Scope) => {
+    if (GLOBAL_OBJECTS.has(name)) return;
+    if (!aliasScopes.has(name)) aliasScopes.set(name, new Set());
+    aliasScopes.get(name)!.add(scope);
+  };
+  const iifeAliasParams = new Map<acorn.Node, string[]>();
+  const pendingAssign: Array<{ name: string; scope: Scope }> = [];
+  walk.simple(ast, {
+    CallExpression(n) {
+      const c = n as acorn.CallExpression;
+      let callee = c.callee as acorn.Node;
+      let args = c.arguments as acorn.Node[];
+      if (callee.type === 'MemberExpression' && (callee as acorn.MemberExpression).property.type === 'Identifier' && ['call', 'apply'].includes(((callee as acorn.MemberExpression).property as acorn.Identifier).name)) {
+        callee = (callee as acorn.MemberExpression).object;
+        args = args.slice(1);
+      }
+      if (callee.type !== 'FunctionExpression' && callee.type !== 'ArrowFunctionExpression') return;
+      const names = (callee as acorn.FunctionExpression).params.map((p, i) => (p.type === 'Identifier' && globalish(args[i], true) ? p.name : '')).filter(Boolean);
+      if (names.length) iifeAliasParams.set(callee, names);
+    },
+  });
   const nearestFunction = (s: Scope) => {
     let x: Scope | undefined = s;
     while (x && !x.isFunction) x = x.parent;
@@ -194,6 +234,7 @@ export function analyzeJs(src: string): JsFacts {
       case 'ArrowFunctionExpression': {
         const f = node as acorn.FunctionExpression | acorn.ArrowFunctionExpression;
         const fs: Scope = { names: new Set(f.params.flatMap((p) => patternNames(p))), isFunction: true, parent: scope };
+        for (const a of iifeAliasParams.get(node) ?? []) addAlias(a, fs);
         if (node.type === 'FunctionExpression') {
           fs.names.add('arguments');
           if ((f as acorn.FunctionExpression).id) fs.names.add((f as acorn.FunctionExpression).id!.name);
@@ -219,6 +260,7 @@ export function analyzeJs(src: string): JsFacts {
         for (const d of v.declarations) {
           const names = patternNames(d.id);
           declareIn(target, names);
+          if (d.id.type === 'Identifier' && globalish(d.init, false)) addAlias(d.id.name, target);
           if (target === root && (v.kind === 'var' || scope === root)) names.forEach((n) => topLevelNames.add(n));
         }
         break;
@@ -250,6 +292,11 @@ export function analyzeJs(src: string): JsFacts {
       case 'WithStatement':
         dyn('with statement');
         break;
+      case 'AssignmentExpression': {
+        const a = node as acorn.AssignmentExpression;
+        if (a.left.type === 'Identifier' && globalish(a.right, false)) pendingAssign.push({ name: a.left.name, scope });
+        break;
+      }
       default:
         break;
     }
@@ -262,6 +309,8 @@ export function analyzeJs(src: string): JsFacts {
   }
   for (const st of ast.body) build(st, root);
   for (const n of topLevelNames) defines.add(n);
+  for (const p of pendingAssign) addAlias(p.name, resolveScope(p.scope, p.name, root));
+  const isAlias = (name: string, scope: Scope) => !!aliasScopes.get(name)?.has(resolveScope(scope, name, root));
 
   // Pass 2: references, with ancestors to know whether an Identifier is a reference and whether it runs at top level.
   const isFunctionNode = (n: acorn.Node) => n.type === 'FunctionDeclaration' || n.type === 'FunctionExpression' || n.type === 'ArrowFunctionExpression';
@@ -320,7 +369,7 @@ export function analyzeJs(src: string): JsFacts {
       const m = node as acorn.MemberExpression;
       const objName = m.object.type === 'Identifier' ? (m.object as acorn.Identifier).name : null;
       // window[expr] / self[expr] dynamic global access
-      if (objName && GLOBAL_OBJECTS.has(objName) && !declared(scope, objName)) {
+      if (objName && ((GLOBAL_OBJECTS.has(objName) && !declared(scope, objName)) || isAlias(objName, scope))) {
         if (m.computed && !(m.property.type === 'Literal' && typeof (m.property as acorn.Literal).value === 'string')) dyn('dynamic global access (window[expr])');
         const prop = !m.computed && m.property.type === 'Identifier' ? m.property.name : m.property.type === 'Literal' ? String((m.property as acorn.Literal).value) : null;
         if (prop && !BROWSER_GLOBALS.has(prop) && !GLOBAL_OBJECTS.has(prop)) {

@@ -95,7 +95,11 @@ export interface XrayCapture {
     domMutationsBeforeLoad: number;
   };
   exploration: ExploreStep[];
+  /** Per explored interaction (4x CPU slowdown): event timing entries and Long Animation Frames with script attribution. */
+  interactions: Array<{ selector: string; kind: string; label: string; t0: number; t1: number; events: Array<{ name: string; startTime: number; duration: number; processingStart: number; processingEnd: number; target: string | null }>; loaf: XrayCapture['loaf'] }>;
   harPath?: string;
+  /** The rendered DOM after load and exploration (for per-template markers). */
+  domPath?: string;
   dcl: number;
   load: number;
   fcp: number | null;
@@ -391,10 +395,31 @@ export async function captureUrl(browser: Browser, o: XrayCaptureOptions): Promi
 
   // Exploration with a coverage delta per interaction state
   let exploration: ExploreStep[] = [];
+  const interactions: XrayCapture['interactions'] = [];
   if (o.explore !== false) {
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 }).catch(() => {});
     exploration = await explore(page, o.stage, async (step) => {
       if (step.ran) await takeCoverage(`interaction:${step.kind}:${step.selector}`);
     });
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 }).catch(() => {});
+    await page.waitForTimeout(300);
+    const after = await page.evaluate(() => {
+      const sp = (window as unknown as { __sp?: { loaf: unknown[]; events: unknown[] } }).__sp;
+      return { loaf: sp?.loaf ?? [], events: sp?.events ?? [] };
+    }).catch(() => ({ loaf: [], events: [] }));
+    for (const st of exploration.filter((x) => x.ran && x.t0 !== undefined && x.t1 !== undefined)) {
+      const lo = st.t0! - 5;
+      const hi = st.t1! + 50;
+      interactions.push({
+        selector: st.selector,
+        kind: st.kind,
+        label: st.label,
+        t0: st.t0!,
+        t1: st.t1!,
+        events: (after.events as XrayCapture['interactions'][number]['events']).filter((e) => e.startTime >= lo && e.startTime <= hi),
+        loaf: (after.loaf as XrayCapture['loaf']).filter((f) => f.startTime + f.duration >= lo && f.startTime <= hi),
+      });
+    }
   }
   await Promise.all(pending);
   for (const st of stylesheets.values()) {
@@ -404,6 +429,8 @@ export async function captureUrl(browser: Browser, o: XrayCaptureOptions): Promi
     st.bytes = Buffer.byteLength(r.text);
     if (!existsSync(st.sourcePath)) writeFileSync(st.sourcePath, r.text);
   }
+  const domPath = join(o.outDir, `${sha(o.url + o.device + (o.consent ?? 'denied'))}.dom.html`);
+  writeFileSync(domPath, await page.content().catch(() => ''));
   await cdp.send('Profiler.stopPreciseCoverage').catch(() => {});
   await cdp.send('CSS.stopRuleUsageTracking').catch(() => {});
   if (o.har) {
@@ -428,7 +455,9 @@ export async function captureUrl(browser: Browser, o: XrayCaptureOptions): Promi
     listeners,
     behaviour: (doc.behaviour as XrayCapture['behaviour'] | null) ?? { globalsAdded: [], globalsTimeline: [], listenerRegistrations: [], timers: [], mutationObservers: [], docWrite: 0, syncXhr: 0, domMutationsBeforeLoad: 0 },
     exploration,
+    interactions,
     harPath,
+    domPath,
     dcl: doc.dcl,
     load: doc.load,
     fcp: doc.fcp,

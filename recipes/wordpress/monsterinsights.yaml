@@ -1,0 +1,32 @@
+id: wp-plugin-monsterinsights
+platform: wordpress
+kind: plugin
+name: MonsterInsights
+category: analytics
+recognize:
+  handles:
+    - monsterinsights-frontend-script
+  paths:
+    - /wp-content/plugins/google-analytics-for-wordpress/
+  domains: []
+  globals:
+    - monsterinsights_frontend
+    - __gtagTracker
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - every page
+  markers: []
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: true
+delayable: false
+knownBreakages:
+  - Delaying loses page_view (SAFE-02)
+verify:
+  - tracking guard
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

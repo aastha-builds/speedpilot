@@ -1,0 +1,40 @@
+id: lib-library-font-awesome
+platform: both
+kind: library
+name: Font Awesome
+category: icons
+recognize:
+  handles:
+    - font-awesome
+    - elementor-icons-fa-solid
+  paths:
+    - font-awesome
+    - fontawesome
+  domains:
+    - use.fontawesome.com
+    - kit.fontawesome.com
+  globals:
+    - FontAwesome
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with icons
+  markers:
+    - .fa
+    - .fas
+    - .fab
+    - '[class*="fa-"]'
+inlineDependencies: []
+safeOptimizations:
+  - change: subset or inline SVG icons
+    tier: T2
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - visual diff
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

@@ -1,0 +1,31 @@
+id: wp-plugin-happy-addons
+platform: wordpress
+kind: plugin
+name: Happy Addons for Elementor
+category: page-builder-addon
+recognize:
+  handles:
+    - happy-elementor-addons
+  paths:
+    - /wp-content/plugins/happy-elementor-addons/
+  domains: []
+  globals:
+    - HappyLocalize
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages using Happy widgets
+  markers:
+    - '[class*="ha-"]'
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages: []
+verify:
+  - each widget on the page
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

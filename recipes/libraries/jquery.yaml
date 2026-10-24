@@ -1,0 +1,37 @@
+id: lib-library-jquery
+platform: both
+kind: library
+name: jQuery
+category: library
+recognize:
+  handles:
+    - jquery-core
+    - jquery
+  paths:
+    - /jquery.min.js
+    - /jquery.js
+    - jquery-3.
+  domains: []
+  globals:
+    - jQuery
+    - $
+  classes: []
+versionsVerified: []
+needs:
+  pageTypes:
+    - wherever a dependent loads
+  markers: []
+inlineDependencies: []
+safeOptimizations: []
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Inline code calling jQuery or $ before DOMContentLoaded breaks when jQuery
+    is deferred (SAFE-01)
+verify:
+  - console
+  - every flow
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."

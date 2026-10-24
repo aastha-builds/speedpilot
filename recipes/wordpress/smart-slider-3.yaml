@@ -1,0 +1,45 @@
+id: wp-plugin-smart-slider-3
+platform: wordpress
+kind: plugin
+name: Smart Slider 3
+category: slider
+recognize:
+  handles:
+    - smartslider-frontend
+    - smartslider3-frontend
+  paths:
+    - /wp-content/plugins/smart-slider-3/
+    - /wp-content/plugins/nextend-smart-slider3-pro/
+  domains: []
+  globals:
+    - N2SS
+    - _N2
+    - N2R
+  classes:
+    - n2-ss-slider
+versionsVerified: []
+needs:
+  pageTypes:
+    - pages with a slider
+  markers:
+    - .n2-ss-slider
+    - ss3-force-full-width
+inlineDependencies: []
+safeOptimizations:
+  - change: remove-template:smartslider-frontend
+    tier: T1
+    when: no .n2-ss-slider on the page (WPF-11)
+  - change: defer:smartslider-frontend
+    tier: T1
+    when: no inline _N2 queue code before DOMContentLoaded
+neverDelay: false
+delayable: false
+knownBreakages:
+  - Real Smart Slider uses an inline _N2 queue that needs the loader first
+verify:
+  - slider advances
+  - visual diff
+confidence: 0.3
+notes: "Seed recipe: identifiers and behaviour notes only, no vendor code.
+  Confidence rises after verification on a fixture or a real job (SPEC.md
+  15.6)."
