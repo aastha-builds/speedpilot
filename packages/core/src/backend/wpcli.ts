@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { run as defaultRun, type Runner, type ExecResult, describeFailure } from '../util/exec.js';
 import type { SiteConfig } from '../config/site.js';
 import type { Stage } from '../store/store.js';
@@ -44,6 +45,13 @@ export function wpCommandIsReadOnly(args: string[]): boolean {
   return READONLY.some((p) => p.every((x, i) => pos[i] === x));
 }
 
+/** The WordPress fixture folder: the project's own, or the one shipped next to the SpeedPilot code. */
+export function fixturesWpDir(root: string): string {
+  const own = join(root, 'fixtures', 'wp');
+  if (existsSync(join(own, 'compose.yaml'))) return own;
+  return fileURLToPath(new URL('../../../../fixtures/wp', import.meta.url));
+}
+
 export class WpCliError extends Error {
   override name = 'WpCliError';
 }
@@ -69,7 +77,7 @@ export class WpCli {
   }
 
   argv(args: string[]): { cmd: string; args: string[]; cwd?: string } {
-    const fx = join(this.root, 'fixtures', 'wp');
+    const fx = fixturesWpDir(this.root);
     if (this.mode === 'compose') return { cmd: 'docker', args: ['compose', '-f', join(fx, 'compose.yaml'), 'exec', '-T', 'cli', 'wp', ...args] };
     if (this.mode === 'wp-env') return { cmd: 'npx', args: ['-y', '@wordpress/env@10.32.0', 'run', 'cli', 'wp', ...args], cwd: existsSync(fx) ? fx : undefined };
     const wp = this.cfg.access.wordpress;

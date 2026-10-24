@@ -58,3 +58,16 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
 - Shopify backend: Shopify CLI wrapper (pushes only to the recorded work theme, never live), theme snapshot into git,
   offline Theme Check, theme profile (CLI or local preview), app embeds, sections per template, app cost from the
   storefront, leftover app code, theme count, Speculation-Rules header.
+
+## Phase 5: rules, analysis and the before report
+
+- `rules/<area>.yaml` generated from CHECKS.md (`pnpm rules:generate`): 237 rules, one per ID, with id, platforms,
+  detect (source, condition, automated), evidence, metric, tier, fix and verify. 193 checks are detected automatically;
+  10 need client or vendor information (listed in every report); the 34 SAFE items are guards attached to findings.
+  A test fails if any CHECKS.md ID has no rule.
+- Rules engine with evaluators per check, SAFE guard attachment, root-cause grouping, SPEC 4 prioritization (failing
+  mobile CWV first, lower risk first at equal gain, learning-loop gains when available) and a ceiling estimate with
+  measured blockers (Lighthouse log-normal scoring).
+- Grades exactly as SPEC 9.4, capped by the safety result.
+- Before report (SPEC 9.1, 9.3): self-contained HTML with a plain-language first page, PDF (Playwright print), JSON
+  and a Markdown summary; branding from site.yaml; anonymized mode. `speedpilot report before <site>`.

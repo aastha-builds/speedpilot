@@ -20,6 +20,9 @@ importers:
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@22.20.5)(yaml@2.8.4)
+      yaml:
+        specifier: 2.8.4
+        version: 2.8.4
 
   packages/cli:
     dependencies:
@@ -102,6 +105,9 @@ importers:
       '@speedpilot/core':
         specifier: workspace:*
         version: link:../core
+      playwright:
+        specifier: 1.63.0
+        version: 1.63.0
 
   packages/shopify:
     dependencies:

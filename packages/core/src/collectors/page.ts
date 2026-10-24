@@ -100,6 +100,8 @@ export interface DocumentStats {
   entranceAnimations: Array<{ selector: string; opacity: number; transform: string }>;
   preloader: { selector: string; coversViewport: boolean } | null;
   serviceWorker: boolean;
+  forms: number;
+  oembedLinks: number;
   speculationRules: { inline: number; header: string | null };
 }
 
@@ -711,6 +713,8 @@ function gatherInPage({ vh }: { vh: number }) {
       entranceAnimations: entrance,
       preloader,
       serviceWorker: !!navigator.serviceWorker?.controller,
+      forms: document.querySelectorAll('form').length,
+      oembedLinks: document.querySelectorAll('link[type*="oembed"]').length,
       speculationRules: { inline: document.querySelectorAll('script[type="speculationrules"]').length, header: null as string | null },
     },
     seo: {

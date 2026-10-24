@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { ensureFixturePreview } from '@speedpilot/shopify';
-import { shopifyBackend } from './backends.js';
+import { ensureFixturePreview, shopifyAuditBackend } from '@speedpilot/shopify';
+import { beforeReport } from '@speedpilot/report';
 import {
   projectRoot,
   writeSiteYaml,
@@ -61,7 +61,7 @@ export function buildProgram(): Command {
       const cfg = loadSite(root(), site);
       const preview = await ensureFixturePreview(root(), cfg);
       const r = await auditSite(root(), site, {
-        backend: cfg.platform === 'shopify' ? shopifyBackend : undefined,
+        backend: cfg.platform === 'shopify' ? shopifyAuditBackend : undefined,
         stage: o.stage,
         lighthouseRuns: Number(o.runs),
         devices: o.devices.split(',') as Array<'mobile' | 'desktop'>,
@@ -75,6 +75,20 @@ export function buildProgram(): Command {
         out(`  ${p.device.padEnd(7)} ${p.url}  score ${m?.score ?? '-'}  LCP ${m?.lcp ? Math.round(m.lcp) + ' ms' : '-'}  TBT ${m?.tbt ?? '-'}  CLS ${m?.cls?.toFixed(3) ?? '-'}`);
       }
       for (const n of r.notes) out(`  note: ${n}`);
+    });
+
+  const report = program.command('report').description('reports (HTML, PDF, JSON, Markdown)');
+  report
+    .command('before <site>')
+    .description('analyze the latest audit with every CHECKS.md rule and write the before report')
+    .option('--run <id>', 'audit run ID (default: latest)')
+    .option('--anonymized', 'also write the anonymized portfolio version')
+    .option('--no-pdf', 'skip the PDF')
+    .action(async (site: string, o: { run?: string; anonymized?: boolean; pdf?: boolean }) => {
+      const { written, analysis } = await beforeReport(root(), site, { runId: o.run, anonymized: o.anonymized, pdf: o.pdf });
+      out(`Grade ${analysis.grade.grade ?? '-'}; ${analysis.findings.length} findings; phone score ${analysis.ceiling.current ?? '-'} -> reachable ${analysis.ceiling.reachable ?? '-'}`);
+      for (const f of analysis.findings.slice(0, 10)) out(`  ${f.priority.toFixed(1).padStart(6)}  ${f.checkId.padEnd(8)} ${f.tier.padEnd(6)} ${f.title}`);
+      for (const w of written) out(`Report: ${w.html}${w.pdf ? `, ${w.pdf}` : ''}, ${w.json}, ${w.markdown}`);
     });
 
   program
