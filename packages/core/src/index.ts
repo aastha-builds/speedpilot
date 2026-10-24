@@ -18,3 +18,6 @@ export * from './collectors/page.js';
 export * from './collectors/interactions.js';
 export * from './collectors/google.js';
 export * from './audit.js';
+export * from './backend/wpcli.js';
+export * from './backend/agent.js';
+export * from './backend/wordpress.js';

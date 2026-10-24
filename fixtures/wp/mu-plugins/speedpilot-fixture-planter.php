@@ -57,14 +57,14 @@ class SPF_Fixture_Command {
 		// PLANTED WPB-04: about 2 MB of autoloaded options, with owners by prefix, including a leftover from a deleted plugin.
 		$chunk = str_repeat( 'x', 100 * 1024 );
 		for ( $i = 1; $i <= 12; $i++ ) {
-			update_option( 'spf_slider_cache_' . $i, $chunk, true );
+			update_option( 'smartslider_cache_' . $i, $chunk, true );
 		}
 		update_option( 'oldstats_plugin_data', str_repeat( 'y', 600 * 1024 ), true );
-		update_option( 'spf_big_single_option', str_repeat( 'z', 300 * 1024 ), true );
+		update_option( 'elementor_remote_info_cache', str_repeat( 'z', 300 * 1024 ), true );
 		$planted[] = array(
 			'id'     => 'autoload-bloat',
 			'checks' => array( 'WPB-04' ),
-			'detail' => 'about 2.1 MB autoloaded: spf_slider_cache_1..12 (100 KB each), oldstats_plugin_data (600 KB, deleted plugin), spf_big_single_option (300 KB)',
+			'detail' => 'about 2.1 MB autoloaded: smartslider_cache_1..12 (100 KB each, Smart Slider), oldstats_plugin_data (600 KB, deleted plugin), elementor_remote_info_cache (300 KB, Elementor)',
 		);
 
 		// Expired transients (WPB-05).

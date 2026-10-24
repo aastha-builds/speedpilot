@@ -18,7 +18,8 @@
     "licenses:check": "node scripts/check-licenses.mjs",
     "fixtures:wp": "node scripts/fixtures-wp.mjs",
     "fixtures:shopify": "node scripts/fixtures-shopify.mjs",
-    "speedpilot": "node packages/cli/dist/index.js"
+    "speedpilot": "node packages/cli/dist/index.js",
+    "test:php": "node scripts/test-php.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

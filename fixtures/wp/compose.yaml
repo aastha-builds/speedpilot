@@ -22,12 +22,13 @@ services:
         condition: service_healthy
     ports:
       - "8888:80"
-    environment:
+    environment: &wpenv
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: fixture-only
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DEBUG: "1"
+      HOME: /tmp
       WORDPRESS_CONFIG_EXTRA: |
         define( 'WP_DEBUG_LOG', true );
         define( 'WP_DEBUG_DISPLAY', false );
@@ -47,17 +48,29 @@ services:
       - ./standins/elementor:/var/www/html/wp-content/plugins/elementor:ro
       - ./.cache/plugins/woocommerce:/var/www/html/wp-content/plugins/woocommerce:ro
       - ./setup:/var/www/setup:ro
+      - ../../packages/wp-agent/tests:/var/www/agent-tests:ro
   cli:
     image: wordpress:cli-php8.3
     depends_on:
       - wordpress
     user: "33:33"
-    environment:
-      WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: wordpress
-      WORDPRESS_DB_PASSWORD: fixture-only
-      WORDPRESS_DB_NAME: wordpress
-      HOME: /tmp
+    environment: *wpenv
+    volumes: *wpvolumes
+    entrypoint: ["sleep", "infinity"]
+  cli74:
+    image: wordpress:cli-php7.4
+    profiles: ["php-matrix"]
+    depends_on: [wordpress]
+    user: "33:33"
+    environment: *wpenv
+    volumes: *wpvolumes
+    entrypoint: ["sleep", "infinity"]
+  cli84:
+    image: wordpress:cli-php8.4
+    profiles: ["php-matrix"]
+    depends_on: [wordpress]
+    user: "33:33"
+    environment: *wpenv
     volumes: *wpvolumes
     entrypoint: ["sleep", "infinity"]
 volumes:

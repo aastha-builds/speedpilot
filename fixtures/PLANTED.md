@@ -15,7 +15,7 @@ Every planted problem maps to at least one CHECKS.md ID. The machine-readable gr
 | W5 | Contact Form 7 assets on every page | Contact Form 7 defaults | WPF-06, CSS-09 |
 | W6 | WooCommerce cart fragments on every page | theme enqueues `wc-cart-fragments` everywhere | WPF-07, WPB-16 |
 | W7 | Slow query in the theme (`posts_per_page => -1`, `orderby => rand`, `meta_query`, query in a loop, ~80 ms) | `inc/slow-query.php` `spf_related_posts()` | WPB-12, WPB-13, NET-01 |
-| W8 | About 2 MB of autoloaded options (one leftover from a deleted plugin, one single option over 100 KB) | `wp spf plant` | WPB-04 |
+| W8 | About 2 MB of autoloaded options: smartslider_cache_1..12 (Smart Slider), elementor_remote_info_cache (300 KB, Elementor), oldstats_plugin_data (600 KB, leftover of a deleted plugin) | `wp spf plant` | WPB-04 |
 | W9 | YouTube embed without a facade | `spf_youtube()` | VID-02, DOC-08 |
 | W10 | Chat-widget-like third-party script on load, polling every 15 s | `http://127.0.0.1:8890/chat/widget.js` | 3P-04, 3P-01, JS-11, JS-09 |
 | W11 | Entrance animation on the hero and first heading | `.animate-in`, `assets/js/animate.js` | DOC-04 |

@@ -43,3 +43,18 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
   LoAF script attribution.
 - Every run records then aborts analytics and ad beacons and blocks mutating requests on non-local targets; navigation
   is rate-limited to 1 request per second on real sites. `speedpilot audit <site>`.
+
+## Phase 4: platform backends and the agent's read-only half
+
+- WordPress agent mu-plugin: kill switch, flags (one autoloaded option), HMAC and Application Password auth,
+  diagnostics REST routes, per-URL handle map, Server-Timing for token requests, staging-only slow queries and outgoing
+  HTTP calls with their callers, Abilities on 6.9+, Tools page, `wp speedpilot` flag commands.
+- Agent tests (TAP harness, no Composer download) pass inside the fixture on PHP 7.4.33, 8.3 and 8.4 with WordPress
+  7.1.3: `pnpm test:php`.
+- WordPress backend: WP-CLI wrapper (local compose/wp-env or remote alias, read-only enforced on remote stages),
+  plugins, themes, environment, autoload with owners, cron health, database stats (revisions, orphans, Action
+  Scheduler, sessions, engines), builder options, per-URL handle maps, cached and bypassed TTFB, wp profile/doctor when
+  installed, admin timings on local fixtures.
+- Shopify backend: Shopify CLI wrapper (pushes only to the recorded work theme, never live), theme snapshot into git,
+  offline Theme Check, theme profile (CLI or local preview), app embeds, sections per template, app cost from the
+  storefront, leftover app code, theme count, Speculation-Rules header.

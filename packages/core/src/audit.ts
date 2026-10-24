@@ -13,6 +13,7 @@ import type { OwnerContext } from './collectors/owners.js';
 import { log, redact } from './log.js';
 import { writeState } from './state.js';
 import { RateLimiter } from './util/exec.js';
+import { collectWordPressBackend } from './backend/wordpress.js';
 
 const require = createRequire(import.meta.url);
 
@@ -70,6 +71,9 @@ export interface AuditOptions {
   urls?: string[];
   ownerRules?: OwnerContext['rules'];
   store?: Store;
+  skipBackend?: boolean;
+  /** Platform backend collector (the Shopify one lives in @speedpilot/shopify). WordPress defaults to the core one. */
+  backend?: (ctx: { root: string; cfg: SiteConfig; stage: Stage; runDir: string; urls: string[]; pages: PageAudit[] }) => Promise<unknown>;
 }
 
 export function toolVersions(): Record<string, string> {
@@ -210,6 +214,18 @@ export async function auditSite(root: string, siteName: string, opts: AuditOptio
       }
     } else notes.push(key ? 'Field data (CrUX) and PSI are skipped for non-public or non-production targets.' : 'No Google API key: CrUX field data and PSI are skipped (field data is marked "not enough data").');
 
+    let backend: unknown;
+    if (!opts.skipBackend) {
+      const urls = [...new Set(pages.map((p) => p.url))];
+      try {
+        if (opts.backend) backend = await opts.backend({ root, cfg, stage, runDir: run.dir, urls, pages });
+        else if (cfg.platform === 'wordpress') backend = await collectWordPressBackend(root, cfg, stage, urls);
+      } catch (e) {
+        notes.push(`Backend collection failed: ${(e as Error).message}`);
+      }
+      if (backend) writeFileSync(join(run.dir, 'backend.json'), JSON.stringify(redact(backend), null, 1));
+    }
+
     const result: AuditResult = {
       runId: run.id,
       dir: run.dir,
@@ -224,6 +240,7 @@ export async function auditSite(root: string, siteName: string, opts: AuditOptio
       startedAt,
       endedAt: new Date().toISOString(),
       notes,
+      backend,
     };
     store.setToolVersions(run.id, versions);
     writeFileSync(join(run.dir, 'audit.json'), JSON.stringify(redact(result), null, 1));

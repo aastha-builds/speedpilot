@@ -1,4 +1,6 @@
 import { Command } from 'commander';
+import { ensureFixturePreview } from '@speedpilot/shopify';
+import { shopifyBackend } from './backends.js';
 import {
   projectRoot,
   writeSiteYaml,
@@ -56,12 +58,16 @@ export function buildProgram(): Command {
     .option('--urls <list>', 'override the sample URLs (comma-separated)')
     .option('--json', 'print the JSON summary')
     .action(async (site: string, o: { stage?: Stage; runs: string; devices: string; urls?: string; json?: boolean }) => {
+      const cfg = loadSite(root(), site);
+      const preview = await ensureFixturePreview(root(), cfg);
       const r = await auditSite(root(), site, {
+        backend: cfg.platform === 'shopify' ? shopifyBackend : undefined,
         stage: o.stage,
         lighthouseRuns: Number(o.runs),
         devices: o.devices.split(',') as Array<'mobile' | 'desktop'>,
         urls: o.urls?.split(','),
       });
+      await preview?.close();
       if (o.json) return out(r, true);
       out(`Audit ${r.runId} (${r.stage}) saved in ${r.dir}`);
       for (const p of r.pages) {
