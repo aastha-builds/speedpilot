@@ -9,6 +9,7 @@ import {
   Store,
   setActiveSite,
   type Stage,
+  auditSite,
 } from '@speedpilot/core';
 
 function out(obj: unknown, json?: boolean) {
@@ -44,6 +45,30 @@ export function buildProgram(): Command {
       if (o.json) return out(results, true);
       for (const r of results) out(`${r.skipped ? 'SKIP' : r.ok ? 'OK  ' : 'FAIL'}  ${r.probe}: ${r.detail}${r.revoke ? `  [${r.revoke}]` : ''}`);
       if (results.some((r) => !r.ok && !r.skipped)) process.exitCode = 1;
+    });
+
+  program
+    .command('audit <site>')
+    .description('read-only audit (safe on production): Lighthouse x5, traces, Playwright collectors, INP, field data')
+    .option('--stage <stage>', 'production or staging (local sites are always local)')
+    .option('--runs <n>', 'Lighthouse runs per URL and device', '5')
+    .option('--devices <list>', 'mobile,desktop', 'mobile,desktop')
+    .option('--urls <list>', 'override the sample URLs (comma-separated)')
+    .option('--json', 'print the JSON summary')
+    .action(async (site: string, o: { stage?: Stage; runs: string; devices: string; urls?: string; json?: boolean }) => {
+      const r = await auditSite(root(), site, {
+        stage: o.stage,
+        lighthouseRuns: Number(o.runs),
+        devices: o.devices.split(',') as Array<'mobile' | 'desktop'>,
+        urls: o.urls?.split(','),
+      });
+      if (o.json) return out(r, true);
+      out(`Audit ${r.runId} (${r.stage}) saved in ${r.dir}`);
+      for (const p of r.pages) {
+        const m = p.lighthouse?.median;
+        out(`  ${p.device.padEnd(7)} ${p.url}  score ${m?.score ?? '-'}  LCP ${m?.lcp ? Math.round(m.lcp) + ' ms' : '-'}  TBT ${m?.tbt ?? '-'}  CLS ${m?.cls?.toFixed(3) ?? '-'}`);
+      }
+      for (const n of r.notes) out(`  note: ${n}`);
     });
 
   program

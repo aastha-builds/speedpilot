@@ -197,13 +197,13 @@ export class ThemeRenderer {
     l.registerTag(
       'section',
       class extends Tag {
-        name: string;
+        sectionName: string;
         constructor(token: TagToken, remain: TopLevelToken[], liquid: Liquid) {
           super(token, remain, liquid);
-          this.name = token.args.trim().replace(/^['"]|['"]$/g, '');
+          this.sectionName = token.args.trim().replace(/^['"]|['"]$/g, '');
         }
         *render(ctx: Context, emitter: Emitter): Generator<unknown, void, unknown> {
-          emitter.write(yield self.renderSection(this.name, { type: this.name, settings: {} }, ctx));
+          emitter.write(yield self.renderSection(this.sectionName, { type: this.sectionName, settings: {} }, ctx));
         }
       },
     );

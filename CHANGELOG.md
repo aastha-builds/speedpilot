@@ -23,3 +23,23 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
   stand-in, Shopify's Speculation-Rules header and an emulated `theme profile`.
 - `fixtures/thirdparty`: a second-origin "third-party CDN" (chat widget, analytics with GA4-style `/g/collect` beacons).
 - `fixtures/PLANTED.md` maps every planted problem to CHECKS.md IDs; `fixtures/truth.json` holds the X-ray ground truth.
+
+## Phase 3: page, browser and lab collectors (read-only)
+
+- Page inventory from robots.txt and sitemaps, template classification, SPEC 3.1 sampling, variant detection.
+- Lighthouse 13 runner (pinned 13.5.0, Node API, chrome-launcher, clean profile, mobile and desktop, N runs, median by
+  score with min and max, JSON and HTML saved). The audit-ID map is built from the installed Lighthouse at startup and
+  fails loudly when a mapped ID is missing. Lighthouse 13.5 renamed three SPEC 3.2 insights (`use-cache-insight` ->
+  `cache-insight`, `interaction-to-next-paint-insight` -> `inp-breakdown-insight`, `lcp-phases-insight` ->
+  `lcp-breakdown-insight`); the map lists both names.
+- PageSpeed Insights v5, CrUX and CrUX History clients (public URLs only).
+- Playwright collectors: requests with owner attribution (WordPress paths, Shopify app/platform domains,
+  third-party-web), JS and CSS coverage after scripted interactions, images, fonts, video and iframes, DOM and document
+  stats (including the Lighthouse-13-removed checks: document.write, non-passive listeners, eager offscreen images,
+  facades, font preloads), console/network/CSP/Liquid/PHP errors, SEO tags, beacons in both consent states,
+  screenshots at 390/768/1440 plus element shots, CDP traces, LCP element and phases, CLS culprits with cause,
+  Long Animation Frames.
+- Scripted INP interactions with the web-vitals attribution build at 4x CPU slowdown, per-interaction breakdown and
+  LoAF script attribution.
+- Every run records then aborts analytics and ad beacons and blocks mutating requests on non-local targets; navigation
+  is rate-limited to 1 request per second on real sites. `speedpilot audit <site>`.

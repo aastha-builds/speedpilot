@@ -77,7 +77,7 @@ function spf_youtube() {
 
 /** PLANTED CLS-03: a promo bar injected after load without reserved space. */
 add_action( 'wp_footer', function () {
-	echo '<script>setTimeout(function(){var b=document.createElement("div");b.className="promo-banner";b.textContent="Free shipping this week";document.body.insertBefore(b,document.body.firstChild);},600);</script>';
+	echo '<script>addEventListener("load",function(){setTimeout(function(){var b=document.createElement("div");b.className="promo-banner";b.textContent="Free shipping this week";document.body.insertBefore(b,document.body.firstChild);},1500);});</script>';
 }, 99 );
 
 // PLANTED WPF-07, WPB-16: WooCommerce cart fragments on every page (WooCommerce 7.8+ no longer does this by default).
