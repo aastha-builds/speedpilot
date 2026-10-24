@@ -85,7 +85,16 @@ function liquidFiles(themeDir: string): string[] {
   const out: string[] = [];
   for (const d of ['layout', 'sections', 'snippets', 'blocks', 'templates']) {
     if (!existsSync(join(themeDir, d))) continue;
-    for (const f of readdirSync(join(themeDir, d))) if (f.endsWith('.liquid')) out.push(`${d}/${f}`);
+    for (const f of readdirSync(join(themeDir, d))) {
+      if (!f.endsWith('.liquid')) continue;
+      // a file the parser cannot read gets no edits at all (it is never rewritten blind)
+      try {
+        toLiquidHtmlAST(readFileSync(join(themeDir, d, f), 'utf8'));
+      } catch {
+        continue;
+      }
+      out.push(`${d}/${f}`);
+    }
   }
   return out;
 }
@@ -183,10 +192,11 @@ export function lcpImage(themeDir: string, file: string, opts: { assetDims?: { w
       for (const a of attrs.filter((x) => /^(loading|fetchpriority|width|height|srcset|sizes|decoding)=/.test(x.raw))) edits.push({ start: a.node.position.start - 1, end: a.node.position.end, text: '' });
       const extra = [`fetchpriority="high"`, `decoding="async"`];
       if (opts.assetDims) extra.push(`width="${opts.assetDims.width}"`, `height="${opts.assetDims.height}"`);
-      if (opts.resized?.length) {
-        const assetName = /'([^']+)'\s*\|\s*asset_url/.exec(srcAttr.raw)?.[1];
+      const assetName = /'([^']+)'\s*\|\s*asset_url/.exec(srcAttr.raw)?.[1];
+      // copies of another image never go into this image's srcset
+      if (opts.resized?.length && assetName && opts.resized.every((r) => r.file.startsWith(`${assetName.replace(/\.\w+$/, '')}-`))) {
         const set = opts.resized.map((r) => `{{ '${r.file}' | asset_url }} ${r.width}w`);
-        if (assetName && opts.assetDims) set.push(`{{ '${assetName}' | asset_url }} ${opts.assetDims.width}w`);
+        if (opts.assetDims) set.push(`{{ '${assetName}' | asset_url }} ${opts.assetDims.width}w`);
         extra.push(`srcset="${set.join(', ')}"`, `sizes="${opts.sizes ?? '100vw'}"`);
       }
       edits.push({ start: srcAttr.node.position.end, end: srcAttr.node.position.end, text: ` ${extra.join(' ')}` });
@@ -274,7 +284,7 @@ export function removeLeftoverApp(themeDir: string, snippet: string, embedBlockI
 }
 
 const DELAY_LOADER = `{%- comment -%} SpeedPilot: loads delayed third-party scripts on the first interaction. {%- endcomment -%}
-<script>(function(){var evs=['pointerdown','keydown','touchstart','scroll'];function go(){evs.forEach(function(e){removeEventListener(e,go,{passive:true});});document.querySelectorAll('script[type="text/speedpilot-delayed"]').forEach(function(o){var s=document.createElement('script');for(var i=0;i<o.attributes.length;i++){var a=o.attributes[i];if(a.name!=='type')s.setAttribute(a.name,a.value);}s.async=false;o.parentNode.replaceChild(s,o);});}evs.forEach(function(e){addEventListener(e,go,{passive:true});});})();</script>
+<script>(function(){var evs=['pointerdown','keydown','touchstart','scroll'];function go(){evs.forEach(function(e){removeEventListener(e,go,{passive:true});});document.querySelectorAll('script[type="text/speedpilot-delayed"]').forEach(function(o){var s=document.createElement('script');for(var i=0;i < o.attributes.length;i++){var a=o.attributes[i];if(a.name!=='type')s.setAttribute(a.name,a.value);}s.async=false;o.parentNode.replaceChild(s,o);});}evs.forEach(function(e){addEventListener(e,go,{passive:true});});})();</script>
 `;
 
 /** 3P-01, 3P-04, SHA-01: load a third-party script on the first interaction (needs an X-ray `safe` verdict for delay). */
@@ -288,6 +298,7 @@ export function delayThirdParty(themeDir: string, srcContains: string): Transfor
       if (n.type !== 'HtmlRawNode' || n.name !== 'script') continue;
       const attrs = (n.attributes ?? []).map((a) => text(src, a));
       if (!attrs.some((a) => a.startsWith('src=') && a.includes(srcContains))) continue;
+      if (attrs.some((a) => a.includes('text/speedpilot-delayed'))) continue;
       const at = n.blockStartPosition!.start + '<script'.length;
       edits.push({ start: at, end: at, text: ' type="text/speedpilot-delayed"' });
     }

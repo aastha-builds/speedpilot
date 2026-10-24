@@ -4,7 +4,7 @@
  * Script changes need an X-ray `safe` verdict and a simulation with no breakage first (SPEC.md 15.5). On the local
  * fixture the "push" restarts the work-theme preview instead.
  */
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { loadSite, paths, readState, verify, log, requireApproval, type SiteConfig, type Stage, type VerificationResult } from '@speedpilot/core';
@@ -71,7 +71,10 @@ export function buildShopifyProposals(x: VerdictContext, probes: ProbeResult[], 
   }
 
   // LCP image
-  const lcpUrl = x.captures.find((c) => c.lcp?.url)?.lcp?.url;
+  // the LCP image of the first page whose LCP is a theme image a section or snippet loads
+  const themeFiles = ['sections', 'snippets'].flatMap((d) => (existsSync(join(o.themeDir, d)) ? readdirSync(join(o.themeDir, d)).filter((f) => f.endsWith('.liquid')).map((f) => `${d}/${f}`) : []));
+  const fileWith = (dir: string, asset: string) => themeFiles.find((f) => existsSync(join(dir, f)) && readFileSync(join(dir, f), 'utf8').includes(`'${asset}'`));
+  const lcpUrl = x.captures.map((c) => c.lcp?.url).find((u): u is string => !!u && !!fileWith(o.themeDir, u.split('?')[0]!.split('/').pop()!)) ?? x.captures.find((c) => c.lcp?.url)?.lcp?.url;
   if (lcpUrl && probes.some((p) => p.images.some((i) => i.src === lcpUrl && (i.loading === 'lazy' || i.fetchpriority !== 'high')))) {
     const asset = lcpUrl.split('?')[0]!.split('/').pop()!;
     out.push({
@@ -82,11 +85,12 @@ export function buildShopifyProposals(x: VerdictContext, probes: ProbeResult[], 
       xrayChanges: [],
       simulate: [{ type: 'lcp-eager', target: asset }],
       build: async (dir) => {
-        const file = ['sections/hero.liquid', ...['sections', 'snippets'].flatMap((d) => (existsSync(join(dir, d)) ? (execFileSync('ls', [join(dir, d)], { encoding: 'utf8' }).split('\n').filter(Boolean).map((f) => `${d}/${f}`)) : []))].find((f) => existsSync(join(dir, f)) && readFileSync(join(dir, f), 'utf8').includes(asset)) ?? 'sections/hero.liquid';
-        const assetPath = join(dir, 'assets', asset);
+        // resized copies only for the asset this file really loads; otherwise only the img_url branch is rewritten
+        const file = fileWith(dir, asset) ?? 'sections/hero.liquid';
+        const assetPath = fileWith(dir, asset) ? join(dir, 'assets', asset) : '';
         let dims: { width: number; height: number } | undefined;
         let resized: Array<{ file: string; width: number; data: Buffer }> = [];
-        if (existsSync(assetPath)) {
+        if (assetPath && existsSync(assetPath)) {
           const buf = readFileSync(assetPath);
           dims = imageSize(buf);
           const r = await resizeImage(buf, asset.endsWith('.png') ? 'image/png' : 'image/jpeg', [480, 800, 1200, 1600]);
@@ -121,6 +125,8 @@ export function buildShopifyProposals(x: VerdictContext, probes: ProbeResult[], 
   for (const n of x.model.byType('liquid').filter((l) => ((l.data.hotSpots as unknown[]) ?? []).length)) {
     const file = n.label;
     if (!existsSync(join(o.themeDir, file))) continue;
+    // only hot spots the transform knows how to rewrite (nested variant loops); others stay in the report
+    if (!T.liquidMinPriceLoop(o.themeDir, file)) continue;
     out.push({ id: `sh-liquid-${file.replace(/[^a-z0-9]+/gi, '-')}`, title: `Fix the Liquid hot spot in ${file}`, checkIds: ['SHT-09'], tier: 'T2', xrayChanges: [], simulate: [], build: async (dir) => T.liquidMinPriceLoop(dir, file) });
   }
 
@@ -143,7 +149,8 @@ export function buildShopifyProposals(x: VerdictContext, probes: ProbeResult[], 
   // nested theme blocks (SHT-21) and speculation rules
   out.push({ id: 'sh-flatten-groups', title: 'Remove redundant nested group blocks in the home template', checkIds: ['SHT-21'], tier: 'T2', xrayChanges: [], simulate: [], build: async (dir) => (existsSync(join(dir, 'templates/index.json')) ? T.flattenGroups(dir, 'templates/index.json') : undefined) });
   out.push({ id: 'sh-speculation', title: 'Speculation rules: moderate prefetch for product and collection links with strict exclusions', checkIds: ['SHT-20'], tier: 'T1', xrayChanges: [], simulate: [], build: async (dir) => T.speculationRules(dir) });
-  return out;
+  // the same script or snippet seen on several pages gives one proposal
+  return out.filter((p, k) => out.findIndex((q) => q.id === p.id) === k);
 }
 
 export interface ShopifyStep {
