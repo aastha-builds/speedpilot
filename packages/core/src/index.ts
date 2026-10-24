@@ -35,3 +35,4 @@ export * from './backup/restore.js';
 export * from './backup/staging.js';
 export * from './backup/drift.js';
 export * from './verifier/smoke.js';
+export * from './verifier/index.js';

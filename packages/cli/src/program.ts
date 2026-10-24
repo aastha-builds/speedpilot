@@ -17,6 +17,8 @@ import {
   backupWordPress,
   restoreTest,
   prepareWordPressStaging,
+  recordBaseline,
+  verify,
 } from '@speedpilot/core';
 
 function out(obj: unknown, json?: boolean) {
@@ -165,6 +167,36 @@ export function buildProgram(): Command {
       } finally {
         store.close();
       }
+    });
+
+  program
+    .command('baseline <site>')
+    .description('record the verification baseline (screenshots, console, network, flows, tracking, SEO, accessibility, backend, performance)')
+    .option('--stage <stage>', 'local, staging or production')
+    .option('--urls <list>', 'comma-separated URLs (default: sample URLs)')
+    .option('--runs <n>', 'Lighthouse runs per URL and device', '3')
+    .action(async (site: string, o: { stage?: Stage; urls?: string; runs: string }) => {
+      const b = await recordBaseline(root(), site, { stage: o.stage, urls: o.urls?.split(','), lighthouseRuns: Number(o.runs) });
+      out(`Baseline ${b.runId} on ${b.stage} (${b.urls.length} URLs, ${b.captures[0]?.flows.length ?? 0} flow runs) in ${b.dir}`);
+    });
+
+  program
+    .command('verify <site>')
+    .description('compare the current state with the baseline; PASS only if every check passes (SPEC 6)')
+    .option('--stage <stage>', 'local, staging or production')
+    .option('--full', 'full set: every viewport, 5 Lighthouse runs')
+    .option('--urls <list>', 'only these URLs (quick verification of affected URLs)')
+    .option('--json', 'JSON output')
+    .action(async (site: string, o: { stage?: Stage; full?: boolean; urls?: string; json?: boolean }) => {
+      const r = await verify(root(), site, { stage: o.stage, full: o.full, urls: o.urls?.split(',') });
+      if (o.json) return out(r, true);
+      out(`${r.result} (${r.kind}) evidence: ${r.evidenceDir}`);
+      for (const c of r.checks) {
+        out(`  ${c.pass ? 'PASS' : 'FAIL'} ${c.name}`);
+        if (!c.pass) for (const d of c.details.slice(0, 8)) out(`       ${d}`);
+        if (!c.pass) for (const e of c.evidence.slice(0, 4)) out(`       evidence: ${e}`);
+      }
+      if (r.result === 'FAIL') process.exitCode = 1;
     });
 
   program

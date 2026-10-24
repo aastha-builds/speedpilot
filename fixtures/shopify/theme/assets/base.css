@@ -11,3 +11,4 @@
 .footer{padding:24px;background:#111;color:#fff}
 .product{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px}
 .product__media img{width:100%;height:auto}
+@media (max-width:749px){.hero__content{position:static;color:#111;padding:16px}}

@@ -88,3 +88,18 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
   duplicates, manifest, verification (checksums plus Liquid-error-free preview), drift check, preview-bar blocking
   with "indicative" labels. A fake store test double drives the same Shopify CLI commands.
 - Drift control for WordPress (plugins, themes, key options, theme file hash).
+
+## Phase 7: verification harness
+
+- `speedpilot baseline` and `speedpilot verify [--full]` (SPEC 6): visual diff per URL and viewport (pixelmatch,
+  anti-aliasing tolerant, masks) plus an early-paint unstyled-content check at FCP; console and network signature
+  comparison (normalized URLs, query strings, line numbers); flows from site.yaml plus a default flow library for
+  WooCommerce and Shopify; tracking guard (same beacon names and counts per URL and flow, both consent states);
+  SEO guard; accessibility guard (Lighthouse score, alt text, keyboard-reachable facades); backend guard (new PHP
+  warnings and fatals in debug.log, Liquid errors, overdue cron); performance thresholds from site.yaml on medians,
+  where "beyond noise" also requires falling outside the baseline's own range.
+- Self-tests: a baseline passes against itself on both fixtures; deferring jQuery with an inline dependent (console),
+  purging the menu-open class (flows), removing the canonical (SEO), blocking the GA4 beacon (tracking) and adding an
+  unsized banner (visual and CLS) are each caught.
+- Fixture fixes found by the harness: the planted late banner is now deterministic, the Shopify hero no longer covers
+  the mobile menu button, and the local preview keeps one cart per visitor.

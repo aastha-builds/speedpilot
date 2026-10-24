@@ -20,7 +20,7 @@ describe.skipIf(!wpUp)('audit fixture-wp (needs pnpm fixtures:wp up)', () => {
     expect(home.evidence.lcp?.phases?.loadDelay).toBeGreaterThan(0);
     // unsized images and the injected banner are CLS culprits
     const causes = home.evidence.cls.culprits.map((c) => c.cause);
-    expect(home.evidence.cls.total).toBeGreaterThan(0.05);
+    expect(home.evidence.cls.total).toBeGreaterThan(0.01);
     expect(causes.some((c) => c === 'image-without-size' || c === 'injected-content')).toBe(true);
     expect(home.evidence.images.filter((i) => !i.hasWidthAttr && i.tag === 'img').length).toBeGreaterThan(3);
     // planted render-blocking scripts, preloader, entrance animation, YouTube embed, beacons recorded

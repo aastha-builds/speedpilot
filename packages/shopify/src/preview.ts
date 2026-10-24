@@ -378,7 +378,7 @@ export async function startPreview(opts: PreviewOptions): Promise<PreviewServer>
   const r = new ThemeRenderer(opts.themeDir, { products: opts.products, variantsPerProduct: opts.variantsPerProduct });
   let last: RenderProfileEntry[] = [];
   const requests: Array<{ method: string; path: string }> = [];
-  const cart: Array<{ id: number; quantity: number }> = [];
+  const carts = new Map<string, Array<{ id: number; quantity: number }>>();
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     requests.push({ method: req.method ?? 'GET', path: url.pathname + url.search });
@@ -420,13 +420,18 @@ export async function startPreview(opts: PreviewOptions): Promise<PreviewServer>
         res.end(JSON.stringify({ prefetch: [{ source: 'document', where: { and: [{ href_matches: '/*' }, { not: { href_matches: ['/cart*', '/checkout*', '/account*'] } }] }, eagerness: 'conservative' }] }));
         return;
       }
+      const cartId = /(?:^|;\s*)cart=([\w-]+)/.exec(String(req.headers.cookie ?? ''))?.[1];
+      const cart = (cartId && carts.get(cartId)) || [];
       if (url.pathname === '/cart.js') {
         res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ item_count: cart.reduce((a, b) => a + b.quantity, 0), items: cart }));
         return;
       }
       if (url.pathname === '/cart/add.js' || url.pathname === '/cart/add') {
-        cart.push({ id: 1, quantity: 1 });
-        res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ item_count: cart.reduce((a, b) => a + b.quantity, 0) }));
+        const id = cartId ?? Math.random().toString(36).slice(2);
+        const items = carts.get(id) ?? [];
+        items.push({ id: 1, quantity: 1 });
+        carts.set(id, items);
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Set-Cookie': `cart=${id}; Path=/` }).end(JSON.stringify({ item_count: items.reduce((a, b) => a + b.quantity, 0) }));
         return;
       }
       if (url.pathname === '/__profile') {
