@@ -10,10 +10,10 @@
   },
   "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "build": "tsc -b packages/core packages/xray packages/report packages/shopify packages/cli packages/mcp-server",
+    "build": "tsc -b packages/core packages/xray packages/report packages/shopify packages/engine packages/cli packages/mcp-server",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b packages/core packages/xray packages/report packages/shopify packages/cli packages/mcp-server --pretty",
+    "typecheck": "tsc -b packages/core packages/xray packages/report packages/shopify packages/engine packages/cli packages/mcp-server --pretty",
     "rules:generate": "node scripts/generate-rules.mjs",
     "licenses:check": "node scripts/check-licenses.mjs",
     "fixtures:wp": "node scripts/fixtures-wp.mjs",

@@ -1,0 +1,26 @@
+{
+  "name": "@speedpilot/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@speedpilot/core": "workspace:*",
+    "@speedpilot/xray": "workspace:*",
+    "@speedpilot/shopify": "workspace:*",
+    "@speedpilot/report": "workspace:*",
+    "playwright": "1.63.0",
+    "postcss": "8.5.31",
+    "@shopify/liquid-html-parser": "2.10.2"
+  }
+}

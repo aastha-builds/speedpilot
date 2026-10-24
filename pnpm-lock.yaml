@@ -29,6 +29,9 @@ importers:
       '@speedpilot/core':
         specifier: workspace:*
         version: link:../core
+      '@speedpilot/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@speedpilot/report':
         specifier: workspace:*
         version: link:../report
@@ -88,6 +91,30 @@ importers:
         specifier: 6.0.5
         version: 6.0.5
 
+  packages/engine:
+    dependencies:
+      '@shopify/liquid-html-parser':
+        specifier: 2.10.2
+        version: 2.10.2
+      '@speedpilot/core':
+        specifier: workspace:*
+        version: link:../core
+      '@speedpilot/report':
+        specifier: workspace:*
+        version: link:../report
+      '@speedpilot/shopify':
+        specifier: workspace:*
+        version: link:../shopify
+      '@speedpilot/xray':
+        specifier: workspace:*
+        version: link:../xray
+      playwright:
+        specifier: 1.63.0
+        version: 1.63.0
+      postcss:
+        specifier: 8.5.31
+        version: 8.5.31
+
   packages/mcp-server:
     dependencies:
       '@modelcontextprotocol/sdk':
@@ -96,6 +123,9 @@ importers:
       '@speedpilot/core':
         specifier: workspace:*
         version: link:../core
+      '@speedpilot/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@speedpilot/report':
         specifier: workspace:*
         version: link:../report
@@ -150,18 +180,27 @@ importers:
       acorn-walk:
         specifier: 8.3.5
         version: 8.3.5
+      cheerio:
+        specifier: 1.1.2
+        version: 1.1.2
       mockttp:
         specifier: 4.6.5
         version: 4.6.5
       php-parser:
         specifier: 3.7.0
         version: 3.7.0
+      playwright:
+        specifier: 1.63.0
+        version: 1.63.0
       postcss:
         specifier: 8.5.31
         version: 8.5.31
       source-map:
         specifier: 0.7.6
         version: 0.7.6
+      yaml:
+        specifier: 2.8.4
+        version: 2.8.4
 
 packages:
 

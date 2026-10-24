@@ -304,6 +304,7 @@ export function findApproval(root, { site, stage, operation }) {
 // ---------------------------------------------------------------------------
 
 const READONLY_WP = [
+  ['speedpilot', 'export'], ['speedpilot', 'list'], ['speedpilot', 'usage-scan'],
   ['core', 'version'],
   ['core', 'check-update'],
   ['core', 'verify-checksums'],

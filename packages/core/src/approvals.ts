@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { ensureDir, paths } from './util/paths.js';
 import type { Stage } from './store/store.js';
 
@@ -70,6 +71,21 @@ export function requireApproval(root: string, opts: { site: string; operation: s
   if (opts.item && !a.items.includes(opts.item) && !a.items.includes('*') && !a.items.includes('all')) {
     throw new ApprovalError(`Item ${opts.item} is not approved for ${opts.stage} in ${where} (approved: ${a.items.join(', ')}).`);
   }
+  return a;
+}
+
+/**
+ * The approval token: a short hash of the approval file the human wrote. MCP write tools need the plan ID plus this
+ * token, so a tool call only goes through while that exact approval exists (SPEC.md 10.2).
+ */
+export function approvalToken(a: ApprovalFile): string {
+  return createHash('sha256').update(JSON.stringify([a.site, a.stage, a.operation, a.items, a.approvedBy, a.approvedAt])).digest('hex').slice(0, 16);
+}
+
+/** Checks a token against the current approval file for the operation and stage. */
+export function requireApprovalToken(root: string, opts: { site: string; operation: string; stage: Stage; item?: string; token: string }): ApprovalFile {
+  const a = requireApproval(root, opts);
+  if (opts.stage !== 'local' && approvalToken(a) !== opts.token) throw new ApprovalError(`The approval token does not match runs/${opts.site}/approvals/${opts.operation}.${opts.stage}.json. Ask the human for the token \`speedpilot approve\` printed.`);
   return a;
 }
 

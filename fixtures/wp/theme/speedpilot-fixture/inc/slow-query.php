@@ -12,6 +12,7 @@ function spf_related_posts() {
 	$q = new WP_Query(
 		array(
 			'post_type'      => 'any',
+			'spf_related'    => 1,
 			'posts_per_page' => -1,
 			'orderby'        => 'rand',
 			'meta_query'     => array(
@@ -27,8 +28,18 @@ function spf_related_posts() {
 		// a query inside a loop
 		$out[] = get_post_meta( $p->ID, '_spf_rating', true );
 	}
-	// plus a deliberately slow query so it crosses the 50 ms threshold on any machine
-	global $wpdb;
-	$wpdb->get_var( "SELECT SLEEP(0.08) FROM {$wpdb->posts} LIMIT 1" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	return count( $out );
 }
+
+/**
+ * Makes the related-posts query itself slow (about 80 ms) on any machine, standing in for a large postmeta table: a
+ * derived table that MySQL evaluates once per query. The query stays the theme's, with spf_related_posts as caller.
+ */
+add_filter(
+	'posts_join',
+	function ( $join, $q ) {
+		return $q->get( 'spf_related' ) ? $join . ' JOIN (SELECT SLEEP(0.08) AS spf_s) AS spf_slow' : $join;
+	},
+	10,
+	2
+);

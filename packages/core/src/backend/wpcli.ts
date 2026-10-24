@@ -29,6 +29,7 @@ const READONLY: string[][] = [
   ['package', 'list'],
   ['speedpilot', 'export'],
   ['speedpilot', 'list'],
+  ['speedpilot', 'usage-scan'],
 ];
 
 export function isReadOnlySql(sql: string): boolean {

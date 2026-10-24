@@ -57,7 +57,10 @@ add_filter( 'wp_omit_loading_attr_threshold', function () {
 /** Hero markup: lazy, no fetchpriority (IMG-01), no width/height (IMG-06), entrance animation (DOC-04). */
 function spf_hero() {
 	$src = get_template_directory_uri() . '/assets/img/hero.jpg';
-	echo '<section class="hero animate-in"><img src="' . esc_url( $src ) . '" alt="Fixture hero" loading="lazy" class="hero-img"><h1>Fast shop, slow fixture</h1></section>';
+	// Test switch for the simulator check (SPEC.md 15.5): `wp option update spf_fixture_fix_hero 1` serves the real fix
+	// (eager, fetchpriority high) so a simulated prediction can be compared with the real result. Off by default.
+	$attrs = get_option( 'spf_fixture_fix_hero' ) ? 'fetchpriority="high" decoding="async"' : 'loading="lazy"';
+	echo '<section class="hero animate-in"><img src="' . esc_url( $src ) . '" alt="Fixture hero" ' . $attrs . ' class="hero-img"><h1>Fast shop, slow fixture</h1></section>';
 }
 
 /** Gallery: unsized images (IMG-06, CLS-01) and eager offscreen images (IMG-07). */

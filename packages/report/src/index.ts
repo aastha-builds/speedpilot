@@ -93,3 +93,4 @@ export async function beforeReport(root: string, site: string, opts: { runId?: s
 
 export type { AfterSection };
 export { plainTitle, costPhrase };
+export * from './after.js';

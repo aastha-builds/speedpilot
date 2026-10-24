@@ -28,18 +28,53 @@ $GLOBALS['speedpilot_t0'] = isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ? (float) $_
 $GLOBALS['speedpilot_marks'] = array( 'mu_plugins' => microtime( true ) );
 
 require_once __DIR__ . '/includes/class-speedpilot-flags.php';
-require_once __DIR__ . '/includes/class-speedpilot-auth.php';
-require_once __DIR__ . '/includes/class-speedpilot-diagnostics.php';
 require_once __DIR__ . '/includes/class-speedpilot-modules.php';
-require_once __DIR__ . '/includes/class-speedpilot-admin.php';
 
-SpeedPilot_Diagnostics::boot();
+/**
+ * Loads authentication and diagnostics only when something needs them (REST, Abilities, token requests, admin),
+ * so a normal visitor's request reads one autoloaded option and nothing else.
+ */
+function speedpilot_agent_load_diagnostics() {
+	require_once __DIR__ . '/includes/class-speedpilot-auth.php';
+	require_once __DIR__ . '/includes/class-speedpilot-diagnostics.php';
+}
+
+add_action(
+	'rest_api_init',
+	function () {
+		speedpilot_agent_load_diagnostics();
+		SpeedPilot_Diagnostics::routes();
+	}
+);
+add_action(
+	'wp_abilities_api_categories_init',
+	function () {
+		speedpilot_agent_load_diagnostics();
+		SpeedPilot_Diagnostics::ability_category();
+	}
+);
+add_action(
+	'wp_abilities_api_init',
+	function () {
+		speedpilot_agent_load_diagnostics();
+		SpeedPilot_Diagnostics::abilities();
+	}
+);
 SpeedPilot_Modules::boot();
+// The visitor-facing cost ends here (reported as sp-agent-booted in Server-Timing for token requests).
+$GLOBALS['speedpilot_marks']['agent_booted'] = microtime( true );
+if ( ! empty( $_SERVER['HTTP_X_SPEEDPILOT_TOKEN'] ) ) {
+	speedpilot_agent_load_diagnostics();
+	SpeedPilot_Diagnostics::boot();
+}
 if ( is_admin() ) {
+	speedpilot_agent_load_diagnostics();
+	require_once __DIR__ . '/includes/class-speedpilot-admin.php';
 	SpeedPilot_Admin::boot();
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	speedpilot_agent_load_diagnostics();
 	require_once __DIR__ . '/includes/class-speedpilot-cli.php';
 	WP_CLI::add_command( 'speedpilot', 'SpeedPilot_CLI' );
 }

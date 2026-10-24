@@ -10,6 +10,7 @@ export default defineConfig({
       '@speedpilot/xray': pkg('xray'),
       '@speedpilot/report': pkg('report'),
       '@speedpilot/shopify': pkg('shopify'),
+      '@speedpilot/engine': pkg('engine'),
       '@speedpilot/cli': pkg('cli'),
       '@speedpilot/mcp-server': pkg('mcp-server'),
     },

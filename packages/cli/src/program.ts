@@ -1,15 +1,17 @@
 import { Command } from 'commander';
 import { ensureFixturePreview, shopifyAuditBackend, backupShopify, verifyShopifyBackup } from '@speedpilot/shopify';
 import { join } from 'node:path';
-import { beforeReport } from '@speedpilot/report';
+import { beforeReport, afterReport } from '@speedpilot/report';
 import { xrayRun, loadXray, explain, isSafe, simulate, graphHtml, diffModels, competitorBenchmark, updateLatestSummary } from '@speedpilot/xray';
 import { writeFileSync } from 'node:fs';
+import { createPlan, planText, applyPlan, deployPlan, rollback, monitorSite, closeLivePreview } from '@speedpilot/engine';
 import {
   projectRoot,
   writeSiteYaml,
   loadSite,
   accessCheck,
   writeApproval,
+  approvalToken,
   insideClaudeCode,
   Store,
   setActiveSite,
@@ -97,6 +99,19 @@ export function buildProgram(): Command {
       const { written, analysis } = await beforeReport(root(), site, { runId: o.run, anonymized: o.anonymized, pdf: o.pdf });
       out(`Grade ${analysis.grade.grade ?? '-'}; ${analysis.findings.length} findings; phone score ${analysis.ceiling.current ?? '-'} -> reachable ${analysis.ceiling.reachable ?? '-'}`);
       for (const f of analysis.findings.slice(0, 10)) out(`  ${f.priority.toFixed(1).padStart(6)}  ${f.checkId.padEnd(8)} ${f.tier.padEnd(6)} ${f.title}`);
+      for (const w of written) out(`Report: ${w.html}${w.pdf ? `, ${w.pdf}` : ''}, ${w.json}, ${w.markdown}`);
+    });
+  report
+    .command('after <site>')
+    .description('after report: before and after deltas, screenshots, filmstrips, change log, verification, blockers, backups and rollback kit')
+    .requiredOption('--before <run-id>', 'the before audit run')
+    .option('--after <run-id>', 'the after audit run (default: latest)')
+    .option('--plan <id>', 'plan whose change log goes into the report')
+    .option('--anonymized', 'also write the anonymized portfolio version')
+    .option('--no-pdf', 'skip the PDF')
+    .action(async (site: string, o: { before: string; after?: string; plan?: string; anonymized?: boolean; pdf?: boolean }) => {
+      const { written, after } = await afterReport(root(), site, { beforeRunId: o.before, afterRunId: o.after, planId: o.plan, anonymized: o.anonymized, pdf: o.pdf });
+      out(`Safety ${after.safety}; ${after.changeLog.filter((c) => c.status === 'kept').length} changes kept, ${after.changeLog.filter((c) => c.status === 'rolled_back').length} rolled back.`);
       for (const w of written) out(`Report: ${w.html}${w.pdf ? `, ${w.pdf}` : ''}, ${w.json}, ${w.markdown}`);
     });
 
@@ -302,6 +317,65 @@ Evidence: ${x.dir}/xray (site-model.json, verdicts.json, summary.json, graph.htm
     });
 
   program
+    .command('plan <site>')
+    .description('change plan from the latest X-ray and audit: tiers, expected gain, verification set and rollback per item')
+    .option('--json', 'JSON output')
+    .action(async (site: string, o: { json?: boolean }) => {
+      const plan = await createPlan(root(), site);
+      out(o.json ? plan : planText(plan), o.json);
+    });
+
+  program
+    .command('apply <plan-id>')
+    .description('apply approved items on staging or the work theme, one at a time, with verification and auto-rollback')
+    .option('--stage <stage>', 'staging (default) or local for fixtures')
+    .option('--items <ids>', 'comma-separated item IDs (default: all approved)')
+    .option('--full', 'full verification after each item')
+    .action(async (planId: string, o: { stage?: Stage; items?: string; full?: boolean }) => {
+      const r = await applyPlan(root(), planId, { stage: o.stage, items: o.items?.split(','), fullVerify: o.full });
+      out(r.steps.map((s) => `${s.proposal}: ${s.status.toUpperCase()} ${s.reason}`).join('\n'));
+    });
+
+  program
+    .command('deploy <plan-id>')
+    .description('production deploy inside the window: fresh backup, drift check, kept items as one batch, full verification')
+    .option('--simulate', 'local fixtures only: ignore the deploy window')
+    .action(async (planId: string, o: { simulate?: boolean }) => {
+      try {
+        const r = await deployPlan(root(), planId, { simulate: o.simulate });
+        out(`Deployed ${r.planId}: verification ${r.verification.result}${r.turnedOff.length ? `; turned off ${r.turnedOff.join(', ')}` : ''}${r.drift.length ? `; drift: ${r.drift.join('; ')}` : ''}. Evidence: ${r.verification.evidenceDir}`);
+      } finally {
+        await closeLivePreview();
+      }
+    });
+
+  program
+    .command('rollback <site>')
+    .description('rollback kit: one item, everything, or the emergency kill switch')
+    .option('--plan <id>', 'plan ID')
+    .option('--item <id>', 'one item')
+    .option('--change <id>', 'one item (same as --item)')
+    .option('--all', 'every change of the plan')
+    .option('--emergency', 'set SPEEDPILOT_DISABLE (WordPress) or publish the previous theme (Shopify)')
+    .action(async (site: string, o: { plan?: string; item?: string; change?: string; all?: boolean; emergency?: boolean }) => {
+      try {
+        const r = await rollback(root(), site, { ...o, item: o.item ?? o.change });
+        out(`Rollback (${r.scope}): ${r.actions.join('; ')}${r.verification ? `. Verification ${r.verification.result}: ${r.verification.evidenceDir}` : ''}`);
+      } finally {
+        await closeLivePreview();
+      }
+    });
+
+  program
+    .command('monitor <site>')
+    .description('72-hour monitoring check (errors, 404s, orders, tracking) and day-7 and day-28 field-data reminders')
+    .option('--days <n>', 'monitoring period this check belongs to (run it from cron through the period)', '3')
+    .action(async (site: string) => {
+      const r = await monitorSite(root(), site);
+      out(`${r.alerts.length ? `ALERTS:\n  ${r.alerts.join('\n  ')}` : 'No alerts.'}\nReminders: ${r.reminders.map((x) => `day ${x.day} on ${x.date}`).join(', ')}`);
+    });
+
+  program
     .command('approve <plan-id>')
     .description('HUMAN ONLY: record an approval for a plan or operation (typed in your own terminal)')
     .requiredOption('--stage <stage>', 'staging or production')
@@ -330,7 +404,7 @@ Evidence: ${x.dir}/xray (site-model.json, verdicts.json, summary.json, graph.htm
         }
         const { file, approval } = writeApproval(root(), { site, stage: o.stage as 'staging' | 'production', operation: planId, items, approvedBy: o.by });
         store.addApproval({ planId, site, stage: o.stage, items, approver: o.by, approvedAt: approval.approvedAt, text: approval.text });
-        out(`Approved ${items.join(', ')} for ${o.stage}. Approval file: ${file} (valid 24 hours).`);
+        out(`Approved ${items.join(', ')} for ${o.stage}. Approval file: ${file} (valid 24 hours). Approval token for the MCP write tools: ${approvalToken(approval)}`);
       } finally {
         store.close();
       }

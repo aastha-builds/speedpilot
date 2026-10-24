@@ -26,6 +26,8 @@ export interface AgentDiag {
   styles: AgentHandle[];
   queries: Array<{ ms: number; sql: string; caller: { function: string; owner: string }; stack: string[] }>;
   http: Array<{ url: string; ms?: number; caller: string }>;
+  /** Secondary WP_Query calls over 5 ms with their original arguments and caller (staging diagnostics only). */
+  wp_queries?: Array<{ args: Record<string, string | number | boolean>; caller: string; ms: number; count: number }>;
   query_count?: number;
   query_total_ms?: number;
   flags: string[];

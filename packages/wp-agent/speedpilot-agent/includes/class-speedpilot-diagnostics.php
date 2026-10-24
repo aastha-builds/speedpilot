@@ -29,13 +29,10 @@ class SpeedPilot_Diagnostics {
 	private static $diag = false;
 
 	/**
-	 * Registers hooks. Cheap: two add_action calls for normal visitors.
+	 * Registers the instrumentation for a token-authenticated request (the bootstrap loads this class only then, or
+	 * for REST, Abilities, admin and WP-CLI).
 	 */
 	public static function boot() {
-		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
-		add_action( 'wp_abilities_api_categories_init', array( __CLASS__, 'ability_category' ) );
-		add_action( 'wp_abilities_api_init', array( __CLASS__, 'abilities' ) );
-
 		if ( empty( $_SERVER['HTTP_X_SPEEDPILOT_TOKEN'] ) ) {
 			return;
 		}
@@ -50,6 +47,8 @@ class SpeedPilot_Diagnostics {
 				define( 'SAVEQUERIES', true );
 			}
 			add_filter( 'pre_http_request', array( __CLASS__, 'http_before' ), PHP_INT_MAX, 3 );
+			add_action( 'pre_get_posts', array( __CLASS__, 'wp_query_start' ), PHP_INT_MAX );
+			add_filter( 'the_posts', array( __CLASS__, 'wp_query_end' ), PHP_INT_MAX, 2 );
 			add_action( 'http_api_debug', array( __CLASS__, 'http_after' ), 10, 5 );
 		}
 
@@ -341,7 +340,7 @@ class SpeedPilot_Diagnostics {
 		$parts = array();
 		$prev  = $t0;
 		foreach ( $marks as $name => $t ) {
-			$parts[] = sprintf( 'sp-%s;dur=%.1f', str_replace( '_', '-', $name ), ( $t - $prev ) * 1000 );
+			$parts[] = sprintf( 'sp-%s;dur=%.3f', str_replace( '_', '-', $name ), ( $t - $prev ) * 1000 );
 			$prev    = $t;
 		}
 		$parts[] = sprintf( 'sp-total;dur=%.1f', ( microtime( true ) - $t0 ) * 1000 );
@@ -351,6 +350,59 @@ class SpeedPilot_Diagnostics {
 		while ( ob_get_level() > 0 ) {
 			ob_end_flush();
 		}
+	}
+
+	/**
+	 * Secondary WP_Query calls in flight (staging diagnostics only): original arguments and caller.
+	 *
+	 * @var array
+	 */
+	private static $wp_queries = array();
+
+	/**
+	 * Records a secondary WP_Query's arguments and caller.
+	 *
+	 * @param WP_Query $q Query.
+	 */
+	public static function wp_query_start( $q ) {
+		if ( $q->is_main_query() ) {
+			return;
+		}
+		$args = array();
+		foreach ( (array) $q->query as $k => $v ) {
+			if ( is_scalar( $v ) ) {
+				$args[ $k ] = $v;
+			}
+		}
+		$caller = '';
+		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 20 ) as $f ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			$file = isset( $f['file'] ) ? $f['file'] : '';
+			if ( isset( $f['function'] ) && ! isset( $f['class'] ) && '' !== $file && false === strpos( $file, '/wp-includes/' ) && false === strpos( $file, 'speedpilot-agent' ) ) {
+				$caller = $f['function'];
+				break;
+			}
+		}
+		self::$wp_queries[ spl_object_hash( $q ) ] = array(
+			'args'   => $args,
+			'caller' => $caller,
+			'start'  => microtime( true ),
+		);
+	}
+
+	/**
+	 * Closes the timing of a secondary WP_Query.
+	 *
+	 * @param array    $posts Posts.
+	 * @param WP_Query $q     Query.
+	 * @return array
+	 */
+	public static function wp_query_end( $posts, $q ) {
+		$k = spl_object_hash( $q );
+		if ( isset( self::$wp_queries[ $k ] ) && ! isset( self::$wp_queries[ $k ]['ms'] ) ) {
+			self::$wp_queries[ $k ]['ms'] = round( ( microtime( true ) - self::$wp_queries[ $k ]['start'] ) * 1000, 1 );
+			self::$wp_queries[ $k ]['count'] = count( (array) $posts );
+		}
+		return $posts;
 	}
 
 	/**
@@ -391,6 +443,13 @@ class SpeedPilot_Diagnostics {
 			foreach ( self::$http as $h ) {
 				unset( $h['start'] );
 				$report['http'][] = $h;
+			}
+			$report['wp_queries'] = array();
+			foreach ( self::$wp_queries as $wq ) {
+				if ( isset( $wq['ms'] ) && $wq['ms'] >= 5 ) {
+					unset( $wq['start'] );
+					$report['wp_queries'][] = $wq;
+				}
 			}
 		}
 		echo "\n<!-- speedpilot-diag:" . base64_encode( wp_json_encode( $report ) ) . " -->\n"; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions, WordPress.Security.EscapeOutput

@@ -64,6 +64,8 @@ function mockData(products: number, variants: number) {
       title: `Fixture product ${i + 1}`,
       url: `/products/product-${i + 1}`,
       price: vs[0]!.price,
+      price_min: Math.min(...vs.map((v) => v.price)),
+      price_max: Math.max(...vs.map((v) => v.price)),
       variants: vs,
       featured_image: img,
       media: [img, { ...img, src: `thumb-${((i + 1) % 6) + 1}.jpg` }],
