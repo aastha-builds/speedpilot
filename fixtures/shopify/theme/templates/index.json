@@ -1,0 +1,33 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "blocks": {
+        "outer": {
+          "type": "group",
+          "blocks": {
+            "inner": {
+              "type": "group",
+              "blocks": {
+                "deep": {
+                  "type": "group",
+                  "blocks": {
+                    "heading": { "type": "text", "settings": { "text": "<h1>Fast shop, slow fixture</h1>", "style": "heading" } },
+                    "cta": { "type": "button", "settings": { "label": "Shop now", "link": "/collections/all" } }
+                  },
+                  "block_order": ["heading", "cta"]
+                }
+              },
+              "block_order": ["deep"]
+            }
+          },
+          "block_order": ["inner"]
+        }
+      },
+      "block_order": ["outer"],
+      "settings": {}
+    },
+    "featured": { "type": "featured-collection", "settings": { "heading": "Featured", "count": 8 } }
+  },
+  "order": ["hero", "featured"]
+}

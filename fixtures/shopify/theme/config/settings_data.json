@@ -1,0 +1,11 @@
+{
+  "current": {
+    "slider_autoplay": true,
+    "fixture_thirdparty": "http://127.0.0.1:8890",
+    "blocks": {
+      "13579": { "type": "shopify://apps/oldreviews/blocks/app-embed/0001", "disabled": false, "settings": {} },
+      "24680": { "type": "shopify://apps/klaviyo-email-marketing-sms/blocks/klaviyo-onsite-embed/2632fe16", "disabled": true, "settings": {} }
+    }
+  },
+  "presets": { "Default": { "slider_autoplay": true } }
+}

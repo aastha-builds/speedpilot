@@ -1,0 +1,15 @@
+<header class="header">
+  <a class="header__logo" href="{{ routes.root_url }}">{{ shop.name }}</a>
+  <button class="header__menu-toggle" aria-expanded="false" aria-controls="HeaderMenu">Menu</button>
+  <nav id="HeaderMenu" class="header__menu">
+    <ul>
+      {%- for link in linklists.main-menu.links -%}
+        <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+      {%- endfor -%}
+    </ul>
+  </nav>
+  <a class="header__cart" href="{{ routes.cart_url }}">Cart (<span data-cart-count>{{ cart.item_count }}</span>)</a>
+</header>
+{% schema %}
+{ "name": "Header", "settings": [], "enabled_on": { "groups": ["header"] } }
+{% endschema %}

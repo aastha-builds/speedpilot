@@ -1,0 +1,4 @@
+.wpcf7-form .invalid input:invalid, .wpcf7-form.invalid [required] { border-color: #dc3232; }
+.wpcf7-response-output { margin: 1em 0; padding: .5em 1em; border: 2px solid #00a0d2; }
+.wpcf7-form.invalid .wpcf7-response-output { border-color: #ffb900; }
+.wpcf7-spinner { visibility: hidden; display: inline-block; width: 24px; height: 24px; }

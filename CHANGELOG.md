@@ -12,3 +12,14 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
 - `.claude/agents/perf-verifier.md` exactly as in SPEC 14.2.
 - `speedpilot access check <site>`: read-only probes for WP-CLI over SSH, REST with an Application Password, Shopify CLI theme list and an optional Admin GraphQL shop query.
 - `speedpilot approve` (human only; refuses inside Claude Code and is blocked by the hook).
+
+## Phase 2: fixtures with planted problems
+
+- `fixtures/wp`: wp-env config (WooCommerce, Elementor, Contact Form 7, Smart Slider 3), fixture theme, planter mu-plugin
+  (`wp spf plant`) and a Docker Compose fallback with written-from-scratch plugin stand-ins for sandboxes that cannot
+  reach wordpress.org. `pnpm fixtures:wp up|down|reset|cli`.
+- `fixtures/shopify/theme`: Horizon-style theme written from scratch with every SPEC 11 planted problem;
+  `pnpm fixtures:shopify push|preview|check`; local liquidjs storefront preview with mock data, a platform-script
+  stand-in, Shopify's Speculation-Rules header and an emulated `theme profile`.
+- `fixtures/thirdparty`: a second-origin "third-party CDN" (chat widget, analytics with GA4-style `/g/collect` beacons).
+- `fixtures/PLANTED.md` maps every planted problem to CHECKS.md IDs; `fixtures/truth.json` holds the X-ray ground truth.

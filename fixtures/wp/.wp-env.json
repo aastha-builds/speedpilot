@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/wp-env.json",
+  "core": null,
+  "phpVersion": "8.3",
+  "plugins": [
+    "https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip",
+    "https://downloads.wordpress.org/plugin/elementor.latest-stable.zip",
+    "https://downloads.wordpress.org/plugin/contact-form-7.latest-stable.zip",
+    "https://downloads.wordpress.org/plugin/smart-slider-3.latest-stable.zip"
+  ],
+  "themes": ["./theme/speedpilot-fixture"],
+  "mappings": {
+    "wp-content/mu-plugins/speedpilot-fixture-planter.php": "./mu-plugins/speedpilot-fixture-planter.php",
+    "wp-content/mu-plugins/speedpilot-agent.php": "../../packages/wp-agent/speedpilot-agent.php",
+    "wp-content/mu-plugins/speedpilot-agent": "../../packages/wp-agent/speedpilot-agent",
+    "setup": "./setup"
+  },
+  "config": {
+    "WP_DEBUG": true,
+    "WP_DEBUG_LOG": true,
+    "WP_DEBUG_DISPLAY": false,
+    "SCRIPT_DEBUG": false,
+    "SPEEDPILOT_HMAC_SECRET": "fixture-only-hmac-secret-not-for-production",
+    "SPEEDPILOT_FIXTURE_THIRDPARTY": "http://127.0.0.1:8890"
+  },
+  "port": 8888,
+  "testsPort": 8889,
+  "env": {
+    "tests": {
+      "phpVersion": "7.4"
+    }
+  }
+}

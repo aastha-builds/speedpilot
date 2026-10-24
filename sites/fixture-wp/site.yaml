@@ -1,0 +1,62 @@
+# Local WordPress fixture (pnpm fixtures:wp up). Exempt from the remote guard: it is local.
+name: fixture-wp
+platform: wordpress
+productionUrl: http://localhost:8888/
+local: true
+permission: { writtenPermission: true, stages: [staging, production], signOff: Fixture owner, reverseEngineering: true }
+access:
+  wordpress: { wpEnv: true, wpCliAliasStaging: "@staging", wpCliAliasProduction: "@production", agentHmacSecret: SPF_FIXTURE_HMAC_SECRET }
+sampleUrls:
+  - http://localhost:8888/
+  - http://localhost:8888/contact/
+  - http://localhost:8888/about/
+  - http://localhost:8888/blog/
+  - http://localhost:8888/shop/
+  - http://localhost:8888/product/fixture-product-1/
+  - http://localhost:8888/product/fixture-variable/
+  - http://localhost:8888/fixture-post-1/
+sampleSize: 8
+flows:
+  - name: mobile menu
+    kind: navigation
+    viewport: mobile
+    steps:
+      - goto: /
+      - click: .menu-toggle
+      - expectVisible: "#primary-nav ul"
+  - name: accordion
+    kind: component
+    steps:
+      - goto: /
+      - click: details.accordion summary
+      - expectVisible: details.accordion[open] p
+  - name: offers button
+    kind: component
+    steps:
+      - goto: /
+      - click: "#heavy-button"
+      - expectVisible: "#offers"
+  - name: add to cart (simple)
+    kind: cart
+    steps:
+      - goto: /shop/
+      - click: .add_to_cart_button
+      - wait: 1500
+  - name: contact form validation
+    kind: form
+    steps:
+      - goto: /contact/
+      - expectVisible: form.wpcf7-form
+  - name: slider next
+    kind: component
+    viewport: desktop
+    steps:
+      - goto: /
+      - click: .n2-next
+      - expectVisible: .n2-ss-slide.n2-active
+masks: ["#footer-year"]
+neverDelay: ["spf-analytics"]
+keepThirdParties: ["127.0.0.1:8890"]
+consent: { regions: [] }
+branding: { name: SpeedPilot Fixture, primary: "#1f6feb", accent: "#0f9d58" }
+approvers: [Fixture owner]

@@ -1,0 +1,13 @@
+<section class="collection">
+  <h1>{{ collection.title }}</h1>
+  {%- paginate collection.products by 24 -%}
+    <div class="grid">
+      {%- for product in collection.products -%}
+        {% render 'product-card', product: product, price: product.price %}
+      {%- endfor -%}
+    </div>
+  {%- endpaginate -%}
+</section>
+{% schema %}
+{ "name": "Collection grid", "settings": [] }
+{% endschema %}

@@ -1,0 +1,84 @@
+{
+  "$comment": "Ground truth for the X-ray Engine (SPEC.md 15.10). Every planted dependency, handler, unused asset, slow query and Liquid hot spot, plus owners and the true verdicts for candidate changes.",
+  "wp": {
+    "baseUrl": "http://localhost:8888",
+    "owners": [
+      { "match": "/wp-content/themes/speedpilot-fixture/", "owner": "theme:speedpilot-fixture" },
+      { "match": "/wp-content/plugins/woocommerce/", "owner": "plugin:woocommerce" },
+      { "match": "/wp-content/plugins/contact-form-7/", "owner": "plugin:contact-form-7" },
+      { "match": "/wp-content/plugins/smart-slider-3/", "owner": "plugin:smart-slider-3" },
+      { "match": "/wp-content/plugins/elementor/", "owner": "plugin:elementor" },
+      { "match": "/wp-includes/", "owner": "core:wordpress" },
+      { "match": "127.0.0.1:8890/chat/", "owner": "third-party:chat-fixture" },
+      { "match": "127.0.0.1:8890/analytics/", "owner": "third-party:analytics-fixture" },
+      { "match": "fonts.googleapis.com", "owner": "third-party:google-fonts" },
+      { "match": "fonts.gstatic.com", "owner": "third-party:google-fonts" },
+      { "match": "youtube", "owner": "third-party:youtube" }
+    ],
+    "dependencies": [
+      { "id": "wp-dep-1", "script": "jquery-core", "neededBy": ["inline:spf-legacy-slider-js-after", "spf-legacy-slider", "elementor-frontend", "wc-add-to-cart"], "when": "before-dcl" },
+      { "id": "wp-dep-2", "script": "spf-legacy-slider", "neededBy": ["inline:spf-legacy-slider-js-after"], "when": "before-dcl" },
+      { "id": "wp-dep-3", "script": "contact-form-7", "neededBy": [], "templates": ["contact"] },
+      { "id": "wp-dep-4", "script": "elementor-frontend", "neededBy": [], "reads": ["elementorFrontendConfig"] }
+    ],
+    "handlers": [
+      { "id": "wp-h-1", "selector": "#heavy-button", "event": "click", "script": "/wp-content/themes/speedpilot-fixture/assets/js/heavy-click.js", "function": "spfHeavyClickHandler", "slow": true, "approxMs": 300 },
+      { "id": "wp-h-2", "selector": ".menu-toggle", "event": "click", "script": "/wp-content/themes/speedpilot-fixture/assets/js/menu.js", "slow": false },
+      { "id": "wp-h-3", "selector": ".n2-next", "event": "click", "script": "/wp-content/plugins/smart-slider-3/assets/smartslider.js", "slow": false }
+    ],
+    "unusedAssets": [
+      { "id": "wp-u-1", "asset": "/wp-content/themes/speedpilot-fixture/assets/js/unused-lib.js", "templates": ["*"] },
+      { "id": "wp-u-2", "asset": "/wp-content/plugins/contact-form-7/includes/js/index.js", "templates": ["home", "about", "blog", "post", "shop", "product"] },
+      { "id": "wp-u-3", "asset": "/wp-content/plugins/contact-form-7/includes/css/styles.css", "templates": ["home", "about", "blog", "post", "shop", "product"] },
+      { "id": "wp-u-4", "asset": "/wp-content/plugins/smart-slider-3/assets/smartslider.js", "templates": ["contact", "about", "blog", "post", "shop", "product"] }
+    ],
+    "slowQueries": [
+      { "id": "wp-q-1", "caller": "spf_related_posts", "file": "inc/slow-query.php", "owner": "theme:speedpilot-fixture", "minMs": 50 }
+    ],
+    "changes": [
+      { "change": "defer:jquery-core", "verdict": "unsafe", "why": "inline spf-legacy-slider-js-after and spf-legacy-slider need jQuery before DOMContentLoaded" },
+      { "change": "defer:spf-legacy-slider", "verdict": "unsafe", "why": "its inline after-script runs immediately and reads $.fn.spfSlider" },
+      { "change": "defer:spf-footer-year", "verdict": "safe", "why": "no dependents, waits for DOMContentLoaded" },
+      { "change": "defer:smartslider-frontend", "verdict": "safe", "why": "defines window.N2SS read by nothing before DCL; inits on DOMContentLoaded" },
+      { "change": "remove:spf-unused-lib", "verdict": "safe", "why": "defines SpfUnusedLib, never read" },
+      { "change": "async:jquery-core", "verdict": "unsafe", "why": "dependents" },
+      { "change": "delay:spf-chat-widget", "verdict": "safe", "why": "third-party chat widget, only the bubble click needs it" },
+      { "change": "delay:spf-analytics", "verdict": "unsafe", "why": "analytics base tag; delaying loses page_view (SAFE-02)" },
+      { "change": "remove-template:contact-form-7@home", "verdict": "safe", "why": "no form on the home page" },
+      { "change": "remove-template:contact-form-7@contact", "verdict": "unsafe", "why": "the contact page has the form" }
+    ]
+  },
+  "shopify": {
+    "baseUrl": "http://localhost:9292",
+    "owners": [
+      { "match": "/assets/", "owner": "theme:speedpilot-horizon-fixture" },
+      { "match": "/cdn/img/", "owner": "theme:speedpilot-horizon-fixture" },
+      { "match": "/cdn/shopifycloud/", "owner": "platform:shopify" },
+      { "match": "127.0.0.1:8890/chat/", "owner": "third-party:chat-fixture" },
+      { "match": "127.0.0.1:8890/analytics/", "owner": "third-party:analytics-fixture" },
+      { "match": "oldreviews-app.example", "owner": "app:oldreviews" },
+      { "match": "fonts.googleapis.com", "owner": "third-party:google-fonts" },
+      { "match": "fonts.gstatic.com", "owner": "third-party:google-fonts" }
+    ],
+    "dependencies": [
+      { "id": "sh-dep-1", "script": "vendor-slider.js", "neededBy": ["inline:theme.liquid#themeSlider"], "when": "immediately" }
+    ],
+    "handlers": [
+      { "id": "sh-h-1", "selector": ".header__menu-toggle", "event": "click", "script": "/assets/theme.js", "slow": false }
+    ],
+    "unusedAssets": [],
+    "liquidHotSpots": [
+      { "id": "sh-l-1", "file": "sections/featured-collection.liquid", "pattern": "nested loop over collections.all.products and variants" }
+    ],
+    "leftoverAppCode": [
+      { "id": "sh-a-1", "file": "snippets/oldreviews-app-widget.liquid", "app": "oldreviews", "embedBlock": "13579" }
+    ],
+    "changes": [
+      { "change": "defer:vendor-slider.js", "verdict": "unsafe", "why": "inline script in theme.liquid calls new window.VendorSlider immediately" },
+      { "change": "defer:footer-tools.js", "verdict": "safe", "why": "no dependents, waits for DOMContentLoaded" },
+      { "change": "delay:chat/widget.js", "verdict": "safe", "why": "third-party chat widget" },
+      { "change": "delay:analytics/gtag.js", "verdict": "unsafe", "why": "analytics base tag" },
+      { "change": "remove:web-pixels-manager", "verdict": "unsafe", "why": "platform script inside content_for_header" }
+    ]
+  }
+}

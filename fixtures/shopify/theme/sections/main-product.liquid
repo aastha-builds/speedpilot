@@ -1,0 +1,27 @@
+<section class="product" data-product-id="{{ product.id }}">
+  <div class="product__media">
+    {%- for media in product.media -%}
+      {{ media | image_url: width: 1200 | image_tag: loading: 'eager', widths: '400, 800, 1200', sizes: '(min-width: 750px) 50vw, 100vw' }}
+    {%- endfor -%}
+  </div>
+  <div class="product__info">
+    <h1>{{ product.title }}</h1>
+    <p class="product__price" data-price>{{ product.price | money }}</p>
+    <form method="post" action="{{ routes.cart_add_url }}" class="product-form" data-product-form>
+      <select name="id" data-variant-select>
+        {%- for variant in product.variants -%}
+          <option value="{{ variant.id }}" data-price="{{ variant.price | money }}">{{ variant.title }}</option>
+        {%- endfor -%}
+      </select>
+      <input type="number" name="quantity" value="1" min="1" data-quantity>
+      <button type="submit" name="add" data-add-to-cart>Add to cart</button>
+    </form>
+    <div class="product__description">{{ product.description }}</div>
+  </div>
+</section>
+<script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "Product", "name": {{ product.title | json }}, "offers": { "@type": "Offer", "price": {{ product.price | divided_by: 100.0 | json }}, "priceCurrency": {{ cart.currency.iso_code | json }} } }
+</script>
+{% schema %}
+{ "name": "Product information", "settings": [] }
+{% endschema %}

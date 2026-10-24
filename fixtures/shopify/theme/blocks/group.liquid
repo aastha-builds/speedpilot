@@ -1,0 +1,8 @@
+{%- comment -%} Horizon-style container block. Nested groups are planted in the home template (SHT-21). {%- endcomment -%}
+<div class="group" {{ block.shopify_attributes }}>{% content_for 'blocks' %}</div>
+{% stylesheet %}
+.group { display: flex; flex-direction: column; gap: 12px; }
+{% endstylesheet %}
+{% schema %}
+{ "name": "Group", "blocks": [{ "type": "@theme" }], "settings": [], "presets": [{ "name": "Group" }] }
+{% endschema %}

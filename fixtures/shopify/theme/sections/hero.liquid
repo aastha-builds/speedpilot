@@ -1,0 +1,22 @@
+{%- comment -%}
+  PLANTED IMG-03, SHT-06, SHT-07: oversized hero, deprecated img_url at a fixed large size, no srcset/sizes, no width/height,
+  no fetchpriority and lazy loading on the LCP image.
+{%- endcomment -%}
+<section class="hero">
+  {%- if section.settings.image != blank -%}
+    <img src="{{ section.settings.image | img_url: '2400x' }}" alt="{{ section.settings.image.alt | escape }}" loading="lazy" class="hero__image">
+  {%- else -%}
+    <img src="{{ 'hero.jpg' | asset_url }}" alt="Hero" loading="lazy" class="hero__image">
+  {%- endif -%}
+  <div class="hero__content">
+    {% content_for 'blocks' %}
+  </div>
+</section>
+{% schema %}
+{
+  "name": "Hero",
+  "settings": [{ "type": "image_picker", "id": "image", "label": "Image" }],
+  "blocks": [{ "type": "@theme" }],
+  "presets": [{ "name": "Hero" }]
+}
+{% endschema %}

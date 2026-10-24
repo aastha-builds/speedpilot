@@ -1,0 +1,38 @@
+# Shopify fixture. Local runs use the liquidjs preview (pnpm fixtures:shopify preview, port 9292).
+# For a development store, set access.shopify.store and run pnpm fixtures:shopify push.
+name: fixture-shopify
+platform: shopify
+productionUrl: http://localhost:9292/
+local: true
+permission: { writtenPermission: true, stages: [staging, production], signOff: Fixture owner, reverseEngineering: true }
+access:
+  shopify: { store: speedpilot-fixture.myshopify.com, themeAccessPassword: SHOPIFY_FIXTURE_THEME_ACCESS_PASSWORD }
+sampleUrls:
+  - http://localhost:9292/
+  - http://localhost:9292/products/product-1
+  - http://localhost:9292/collections/all
+  - http://localhost:9292/cart
+  - http://localhost:9292/search
+  - http://localhost:9292/pages/about
+sampleSize: 6
+flows:
+  - name: mobile menu
+    kind: navigation
+    viewport: mobile
+    steps:
+      - goto: /
+      - click: .header__menu-toggle
+      - expectVisible: "#HeaderMenu ul"
+  - name: variant select and add to cart
+    kind: cart
+    steps:
+      - goto: /products/product-1
+      - select: "[data-variant-select]"
+        value: "100001"
+      - click: "[data-add-to-cart]"
+      - expectText: "[data-cart-count]"
+        text: "1"
+masks: []
+keepThirdParties: ["127.0.0.1:8890"]
+branding: { name: SpeedPilot Fixture Store, primary: "#111111", accent: "#0f9d58" }
+approvers: [Fixture owner]

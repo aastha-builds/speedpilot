@@ -1,0 +1,29 @@
+{%- comment -%}
+  PLANTED SHT-09: loop over a large collection (all products, then a nested loop over each product's variants) on the home page.
+{%- endcomment -%}
+<section class="featured">
+  <h2>{{ section.settings.heading }}</h2>
+  <div class="grid">
+    {%- for product in collections.all.products limit: 250 -%}
+      {%- assign cheapest = product.price -%}
+      {%- for variant in product.variants -%}
+        {%- for v2 in product.variants -%}
+          {%- if v2.price < cheapest -%}{%- assign cheapest = v2.price -%}{%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {%- if forloop.index <= section.settings.count -%}
+        {% render 'product-card', product: product, price: cheapest %}
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+</section>
+{% schema %}
+{
+  "name": "Featured collection",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Featured" },
+    { "type": "range", "id": "count", "label": "Products", "min": 2, "max": 12, "step": 1, "default": 8 }
+  ],
+  "presets": [{ "name": "Featured collection" }]
+}
+{% endschema %}

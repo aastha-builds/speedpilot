@@ -1,0 +1,10 @@
+[
+  { "name": "theme_info", "theme_name": "SpeedPilot Horizon Fixture", "theme_version": "1.0.0", "theme_author": "SpeedPilot", "theme_documentation_url": "https://example.com", "theme_support_url": "https://example.com" },
+  {
+    "name": "Fixture",
+    "settings": [
+      { "type": "checkbox", "id": "slider_autoplay", "label": "Slider autoplay", "default": true },
+      { "type": "text", "id": "fixture_thirdparty", "label": "Fixture third-party origin", "default": "http://127.0.0.1:8890" }
+    ]
+  }
+]

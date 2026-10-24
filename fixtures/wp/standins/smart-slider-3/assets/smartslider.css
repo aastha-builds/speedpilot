@@ -1,0 +1,5 @@
+.n2-ss-slider { position: relative; overflow: hidden; }
+.n2-ss-slide { display: none; }
+.n2-ss-slide.n2-active { display: block; }
+.n2-ss-slide img { width: 100%; height: auto; }
+.n2-next { position: absolute; right: 8px; top: 45%; }

@@ -1,0 +1,11 @@
+<div class="block-text block-text--{{ block.settings.style }}" {{ block.shopify_attributes }}>{{ block.settings.text }}</div>
+{% schema %}
+{
+  "name": "Text",
+  "settings": [
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Text</p>" },
+    { "type": "select", "id": "style", "label": "Style", "options": [{ "value": "body", "label": "Body" }, { "value": "heading", "label": "Heading" }], "default": "body" }
+  ],
+  "presets": [{ "name": "Text" }]
+}
+{% endschema %}

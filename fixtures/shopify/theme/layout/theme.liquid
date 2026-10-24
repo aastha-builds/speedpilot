@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{{ page_title }}{% unless page_title contains shop.name %} &ndash; {{ shop.name }}{% endunless %}</title>
+    {%- if page_description -%}<meta name="description" content="{{ page_description | escape }}">{%- endif -%}
+    <link rel="canonical" href="{{ canonical_url }}">
+
+    {%- comment -%} PLANTED FONT-01, FONT-09, SHT-08: external font with 6 weights linked in theme.liquid {%- endcomment -%}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+
+    {{ 'base.css' | asset_url | stylesheet_tag }}
+
+    {%- comment -%} PLANTED SHT-02, JS-01: parser-blocking script_tag in the head {%- endcomment -%}
+    {{ 'vendor-slider.js' | asset_url | script_tag }}
+
+    {%- comment -%} PLANTED SAFE-01: inline script that depends on a global defined by the parser-blocking script {%- endcomment -%}
+    <script>
+      window.themeSlider = new window.VendorSlider({ autoplay: {{ settings.slider_autoplay | json }} });
+    </script>
+
+    <script src="{{ 'theme.js' | asset_url }}" defer></script>
+    <script src="{{ 'footer-tools.js' | asset_url }}"></script>
+
+    {{ content_for_header }}
+
+    {%- comment -%} PLANTED SHA-03-like / 3P: an app-like script injected directly in theme.liquid {%- endcomment -%}
+    <script src="{{ settings.fixture_thirdparty }}/chat/widget.js"></script>
+    <script async src="{{ settings.fixture_thirdparty }}/analytics/gtag.js"></script>
+  </head>
+  <body class="template-{{ template.name }}">
+    {% sections 'header-group' %}
+    <main id="MainContent" role="main">
+      {{ content_for_layout }}
+    </main>
+    {% sections 'footer-group' %}
+    {%- comment -%} PLANTED SHA-03: leftover snippet from an uninstalled reviews app {%- endcomment -%}
+    {% render 'oldreviews-app-widget' %}
+  </body>
+</html>
