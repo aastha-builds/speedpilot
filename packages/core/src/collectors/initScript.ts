@@ -38,6 +38,10 @@ export const COLLECTOR_INIT_SCRIPT = String.raw`
     return null;
   }
   sp.callerUrl = callerUrl;
+  sp.lastInput = null;
+  ['pointerdown', 'mousedown', 'keydown', 'touchstart'].forEach(function (t) {
+    addEventListener(t, function (ev) { if (ev.isTrusted) sp.lastInput = ev.timeStamp; }, { capture: true, passive: true });
+  });
   function obs(type, cb, extra) {
     try {
       var o = new PerformanceObserver(function (list) { list.getEntries().forEach(cb); });
@@ -50,7 +54,9 @@ export const COLLECTOR_INIT_SCRIPT = String.raw`
     sp.lcp.push({ startTime: e.startTime, renderTime: e.renderTime, loadTime: e.loadTime, size: e.size, url: e.url || null, selector: sel(e.element), tag: e.element ? e.element.nodeName.toLowerCase() : null });
   });
   obs('layout-shift', function (e) {
-    if (e.hadRecentInput) return;
+    // Chromium sets hadRecentInput in mobile and touch emulation even when no input happened, so only shifts within
+    // 500 ms after an input event this page really received are excluded (the CLS definition).
+    if (e.hadRecentInput && sp.lastInput !== null && e.startTime - sp.lastInput < 500) return;
     sp.shifts.push({ value: e.value, startTime: e.startTime, sources: (e.sources || []).map(function (s) {
       return { selector: sel(s.node), tag: s.node && s.node.nodeName ? s.node.nodeName.toLowerCase() : null, previousRect: s.previousRect && { y: s.previousRect.y, h: s.previousRect.height }, currentRect: s.currentRect && { y: s.currentRect.y, h: s.currentRect.height } };
     }) });

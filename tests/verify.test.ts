@@ -34,7 +34,7 @@ describe.skipIf(!wpUp)('verification harness on fixture-wp', () => {
     ['purge the menu-open class', (url, body) => (url.includes('theme.css') ? body.replace(/\.main-nav\.is-open ul \{[^}]*\}/g, '') : undefined), 'flows'],
     ['remove the canonical', (url, body, ct) => (ct.includes('html') ? body.replace(/<link rel="canonical"[^>]*>/g, '') : undefined), 'seo'],
     ['block the GA4 beacon', (url, body, ct) => (ct.includes('html') ? body.replace(/<script[^>]*id="spf-analytics-js"[^>]*><\/script>/g, '') : undefined), 'tracking'],
-    ['add an unsized banner', (url, body, ct) => (ct.includes('html') ? body.replace(/(<body[^>]*>)/, '$1<img src="/wp-content/themes/speedpilot-fixture/assets/img/banner.jpg" alt="Sale">') : undefined), 'visual'],
+    ['add an unsized banner', (url, body, ct) => (ct.includes('html') ? body.replace(/(<body[^>]*>)/, '$1<script>setTimeout(function(){var i=new Image();i.src="/wp-content/themes/speedpilot-fixture/assets/img/banner.jpg";i.alt="Sale";document.body.insertBefore(i,document.body.firstChild);},400);</script>') : undefined), 'visual'],
   ];
   for (const [name, transform, expected] of broken) {
     it(`catches: ${name} (${expected})`, async () => {

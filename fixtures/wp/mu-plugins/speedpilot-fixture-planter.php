@@ -9,6 +9,23 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// The sandbox has no route to WordPress.org: skip core, plugin and theme update checks so their failures do not show up
+// as PHP warnings in the backend guard. Local fixture only.
+foreach ( array( 'update_core', 'update_plugins', 'update_themes' ) as $speedpilot_fixture_transient ) {
+	add_filter(
+		'pre_site_transient_' . $speedpilot_fixture_transient,
+		function () {
+			return (object) array(
+				'last_checked'    => time(),
+				'version_checked' => get_bloginfo( 'version' ),
+				'updates'         => array(),
+				'response'        => array(),
+				'translations'    => array(),
+			);
+		}
+	);
+}
+
 if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 	return;
 }
