@@ -19,8 +19,8 @@ export interface DriftItem {
 /** Current state of a WordPress stage for drift control (SPEC.md 5.4). Read-only. */
 export async function wpState(host: WpHost): Promise<WpState> {
   const wp = host.wp;
-  const plugins = (await wp.json<WpState['plugins']>(['plugin', 'list', '--fields=name,status,version'])).filter((p) => p.status !== 'must-use' && p.status !== 'dropin');
-  const themes = await wp.json<WpState['themes']>(['theme', 'list', '--fields=name,status,version']);
+  const plugins = (await wp.json<WpState['plugins']>(['plugin', 'list', '--fields=name,status,version', '--skip-update-check'])).filter((p) => p.status !== 'must-use' && p.status !== 'dropin');
+  const themes = await wp.json<WpState['themes']>(['theme', 'list', '--fields=name,status,version', '--skip-update-check']);
   const options: Record<string, unknown> = {};
   for (const n of KEY_OPTIONS) options[n] = await wp.text(['option', 'get', n, '--format=json']).then((v) => JSON.parse(v) as unknown).catch(() => null);
   const stylesheet = options.stylesheet as string | undefined;

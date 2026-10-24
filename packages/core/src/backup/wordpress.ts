@@ -156,7 +156,7 @@ export async function backupWordPress(cfg: SiteConfig, stage: Stage, o: BackupOp
   const opt = async (n: string) => wp.text(['option', 'get', n, '--format=json']).then((v) => JSON.parse(v) as unknown).catch(() => null);
   const options: Record<string, unknown> = {};
   for (const n of KEY_OPTIONS) options[n] = await opt(n);
-  const plugins = await wp.json<Array<{ name: string; status: string; version: string }>>(['plugin', 'list', '--fields=name,status,version']).catch(() => []);
+  const plugins = await wp.json<Array<{ name: string; status: string; version: string }>>(['plugin', 'list', '--fields=name,status,version', '--skip-update-check']).catch(() => []);
   const manifest: WpManifest = {
     site: cfg.name,
     stage,
@@ -165,7 +165,7 @@ export async function backupWordPress(cfg: SiteConfig, stage: Stage, o: BackupOp
     wordpress: await wp.text(['core', 'version']).catch(() => undefined),
     php: (await o.host.shell('php -r "echo PHP_VERSION;"')).stdout.trim() || undefined,
     plugins: plugins.filter((p) => p.status !== 'must-use' && p.status !== 'dropin'),
-    themes: await wp.json<Array<{ name: string; status: string; version: string }>>(['theme', 'list', '--fields=name,status,version']).catch(() => []),
+    themes: await wp.json<Array<{ name: string; status: string; version: string }>>(['theme', 'list', '--fields=name,status,version', '--skip-update-check']).catch(() => []),
     activeTheme: options.stylesheet as string | undefined,
     parentTheme: options.template as string | undefined,
     options,

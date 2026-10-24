@@ -52,6 +52,8 @@ export interface VerifyOptions {
   store?: Store;
   base?: string;
   only?: Check['name'][];
+  /** Extra masks for this run: areas a change alters on purpose (for example a video facade). */
+  masks?: string[];
 }
 
 function baseFor(root: string, cfg: SiteConfig, stage: Stage, override?: string): string {
@@ -155,7 +157,7 @@ export async function verify(root: string, site: string, opts: VerifyOptions = {
     const checks: Check[] = [];
     try {
       const flows = opts.flows === false ? [] : flowsFor(cfg, baseline.urls);
-      const now = await capture(browser, cfg, { base: baseline.base, urls, flows, outDir: join(run.dir, 'screenshots'), stage, viewports, transform: opts.transform });
+      const now = await capture(browser, cfg, { base: baseline.base, urls, flows, outDir: join(run.dir, 'screenshots'), stage, viewports, transform: opts.transform, masks: opts.masks ? [...cfg.masks, ...opts.masks] : undefined });
       const baseCap = baseline.captures.find((c) => c.consent !== 'granted')!;
       checks.push(...compareCaptures({ ...baseCap, urls: baseCap.urls.filter((u) => urls.includes(u.url)) }, now, cfg, run.dir));
       const granted = baseline.captures.find((c) => c.consent === 'granted');

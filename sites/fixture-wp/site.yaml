@@ -54,9 +54,10 @@ flows:
       - goto: /
       - click: .n2-next
       - expectVisible: .n2-ss-slide.n2-active
-masks: ["#footer-year"]
+masks: ["#footer-year", "section.related", ".up-sells"]  # WooCommerce shows random related products on every view
 neverDelay: ["spf-analytics"]
 keepThirdParties: ["127.0.0.1:8890"]
 consent: { regions: [] }
 branding: { name: SpeedPilot Fixture, primary: "#1f6feb", accent: "#0f9d58" }
 approvers: [Fixture owner]
+ignoreErrors: ["youtube-nocookie.com", "youtube.com"]  # the sandbox has no route to YouTube; the embed fails with 403 at random times

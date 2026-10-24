@@ -123,3 +123,100 @@ All notable changes to SpeedPilot. Conventional commits; one section per phase.
 - Production exploration never clicks outside the safe list (trap-button test).
 - Licence check (`pnpm licenses:check`) in CI; GPL fails the build (test). One exception is recorded and needs the
   owner's sign-off: axe-core (MPL-2.0), a transitive dependency of Lighthouse.
+
+## Phase 9: X-ray Engine, part 2 (verdicts, simulator, recipes, validation)
+
+- Safe-change verdicts (`safe`, `unsafe`, `unknown`) for defer, async, delay until interaction, per-template removal
+  and removal, with evidence per page: dependents (runtime, static and agent edges, document order for deferred
+  scripts), inline handler attributes, dynamic code that could read a script's globals (eval, `new Function`, string
+  timers, `window[expr]`, `with`), document.write, lifecycle listeners that async or delay would miss, platform and
+  tracking scripts, injected loader chains, recipe markers per template, listeners and coverage during interactions.
+  Scope-aware tracking of global-object aliases (`var w = window`, UMD and IIFE parameters).
+- Mutation suite (19 tricky cases) and controls; CI gates on both fixtures: zero false `safe`, at least 80% of truly
+  safe changes found. Verdicts are logged (shadow mode) and failed `safe` verdicts lower the recipe's confidence.
+- What-if simulator: a local mockttp rewriting proxy applies one or several changes (defer, async, remove, per-template
+  removal, delay, preload, eager LCP image), measures baseline and variant through the same proxy (interleaved runs,
+  mobile network, 4x CPU) and runs a quick verification (console, failed requests, visual). Results are labelled
+  "simulated"; breakage and "no meaningful gain" are reported separately (REV-08). On the fixture the lazy-hero fix was
+  predicted at 36 ms (range -52 to 128 ms) and measured at 56 ms. Under Lighthouse's 1.6 Mbps profile the six eager
+  off-screen thumbnails use the bandwidth and the hero fix alone gains nothing; the report says so.
+- Ideal versus actual waterfall (REV-02, REV-03), cost per owner with a treemap, interaction deep dive (input delay,
+  processing, presentation, handlers with owner, file and line; REV-07), backend map (slow queries with callers, PHP
+  patterns, Liquid hot spots, leftover app snippets).
+- 47 seed recipes (WordPress plugins and themes, Shopify themes and apps, JS libraries), recipe drafts for unknown
+  owners (REV-01), version checks (REV-04), learning loop with ranked fixes and an anonymized export.
+- Competitor benchmark from public data and one normal visit per URL, robots.txt respected (REV-06); lightweight
+  replacement proposals written from scratch (REV-05); optional REA adapter whose findings never change a verdict.
+- `speedpilot xray explain|safe|simulate|graph|diff|benchmark`; nine MCP tools with answers under 20 KB.
+
+## Phase 10: WordPress optimization engine
+
+- Agent modules, each one flag with per-template or per-URL rules: asset-control (defer or async through the 6.3+
+  strategy API, dequeue, footer, fetchpriority), lcp, images (dimensions, lazy below the fold, responsive WebP copies
+  built by `wp speedpilot images-build`), fonts (self-hosted woff2, swap, two preloads, fallback faces with metrics read
+  from the font files), core-extras, third-parties (delay on interaction, video and map facades), css (critical CSS,
+  async stylesheets, SpeedPilot CSS fixes for DOC-04 and CLS-03), resource-hints, speculative, plugin-cf7,
+  plugin-woocommerce, plugin-elementor, query-cache (bounds and caches a slow WP_Query traced to its caller) and
+  interaction-yield (paint first, then run a slow handler that never calls preventDefault).
+- One shared HTML pass on WordPress 6.9+'s template enhancement output buffer, tags edited with WP_HTML_Tag_Processor.
+- `wp speedpilot usage-scan` (SAFE-05: content, widgets, menus, builder data, templates), `put-file` (uploads/speedpilot
+  only), `images-build`, `autoload on|off` (scripted database step with its undo).
+- Diagnostics and authentication load lazily; the visitor-facing boot is about 0.5 ms. Tests prove under 2 ms and zero
+  added queries with all flags off and on, clean turn-off per flag and through SPEEDPILOT_DISABLE.
+- Proposals come from X-ray verdicts, page probes, the agent's handle maps and slow WP_Query calls, autoload stats and
+  the usage scan; every defer, delay or dequeue needs a `safe` verdict and a simulation without breakage first.
+- The apply loop rolls back an item whose verification or any later step fails, and keeps the visual masks of kept
+  items (a video facade, for example) for every later verification against the same baseline.
+- Proof on fixture-wp (`scripts/optimize-fixture-wp.mjs`, Lighthouse 13 mobile, median of 5 runs, range in brackets):
+  home 71 before, 93 after [64-94]; contact, about, blog 97; shop 96; products 94 and 95; post 96. Kept: fonts, lcp,
+  images, asset-control (the parts the X-ray marked safe), cf7, woo-fragments, third-parties delay, video facade,
+  core-extras, critical CSS, banner space reservation, no entrance animation, resource hints, speculative loading,
+  query-cache, interaction-yield and the autoload fix. Refused by the X-ray and left untouched: deferring jQuery,
+  jquery-migrate, the legacy slider, sourcebuster-js (unsafe) and elementor-frontend (unknown). The preloader removal is
+  T3 and waits for client approval. Lab LCP stays at 2.4 to 2.9 s under mobile throttling on this fixture (target
+  2.5 s): the home hero image and its server are the remaining cost. Earlier rollbacks found real defects (an LCP
+  preload whose srcset differed from the image, a site-wide preload, inline `height:auto` on a fixed-height hero, a
+  facade overlay placed before late layout, a banner reservation rounded to whole pixels), each fixed and re-verified.
+
+## Phase 11: Shopify optimization engine
+
+- Liquid transforms located on the AST (@shopify/liquid-html-parser) and spliced at the node's exact position; any edit
+  that overlaps `content_for_header` or a checkout file is refused (`ProtectedEditError`).
+- Transforms: defer a parser-blocking script the X-ray proved safe; defer a library together with its inline dependents
+  (run on DOMContentLoaded) when nothing else needs their globals earlier; the LCP image (`image_url` + `image_tag` with
+  widths, sizes, eager, fetchpriority high and preload instead of the deprecated `img_url`; resized WebP copies with a
+  srcset for theme-asset images); self-hosted fonts in a snippet; the nested variant loop becomes `price_min` with the
+  loop limited to what it renders; leftover app snippets stop rendering and their app embed is switched off (the
+  snippet file stays, quarantined); third-party scripts load on the first interaction where `delay` is safe; redundant
+  nested group blocks are flattened; speculation rules with strict exclusions.
+- A git working copy of the work theme with one commit per change, pushed to the recorded work theme only (the CLI
+  wrapper refuses the live theme, other themes and `--live`); on the local fixture the work theme runs in its own
+  preview. Verification after each commit; a failing commit is reverted.
+
+## Phase 12: plan, approve, apply, deploy, rollback, monitor
+
+- `speedpilot plan` builds a plan from the X-ray and the engines (tier, findings, where, expected gain, verification
+  set, rollback step, dependencies; T3 for design, tracking, plugin or app removal), stored in SQLite and JSON.
+- `speedpilot apply` checks every item's approval and today's backup before the first write, applies one item at a
+  time with verification and automatic rollback, and records each outcome for the learning loop. Production never
+  takes `apply`; it gets changes through `speedpilot deploy`.
+- `speedpilot deploy`: deploy window and campaigns, fresh backup, drift check, the staging flag set as one batch plus
+  scripted database steps, full verification, flags turned off in reverse until production passes. Shopify publishes
+  the verified work theme and keeps the previous live theme for the instant rollback.
+- `speedpilot rollback --item|--change|--all|--emergency` and `speedpilot monitor` (pages, console errors, failed
+  requests, tracking events, orders against the same day last week, PHP errors, day-7 and day-28 reminders).
+- `speedpilot approve` prints an approval token for the MCP write tools.
+
+## Phase 13: after report
+
+- `speedpilot report after <site> --before <run> [--plan <id>]`: before and after deltas, side-by-side screenshots,
+  filmstrips from the median Lighthouse runs, the change log (flag or commit, rollback), verification results,
+  remaining blockers with options, re-check dates, backups and the rollback kit. The grade counts only with safety
+  PASS. Anonymized version without domain, client name, logos or screenshots.
+
+## Phase 14: MCP server
+
+- Read-only tools (audit, get_findings, get_metrics, compare_runs, get_report, list_backups) and write tools (backup,
+  prepare_staging, apply_change, rollback, deploy) that need the plan ID and the approval token, default to a dry run
+  and return evidence paths; the nine X-ray tools. Registered in `.mcp.json`; add it elsewhere with
+  `claude mcp add speedpilot -- node packages/mcp-server/dist/index.js`.

@@ -84,19 +84,20 @@ SpeedPilot_Html::add(
 			}
 			// keep the iframe markup but park its src; the facade button restores it on click
 			$title = (string) $p->get_attribute( 'title' );
+			$p->set_attribute( 'data-speedpilot-size', (int) $p->get_attribute( 'width' ) . 'x' . (int) $p->get_attribute( 'height' ) );
 			$p->set_attribute( 'data-speedpilot-src', $src );
-			$p->set_attribute( 'src', 'about:blank' );
+			$p->remove_attribute( 'src' ); // an iframe without src stays blank (the tag processor refuses about:blank as a URL)
 			$p->set_attribute( 'data-speedpilot-facade', $kind );
 			$p->set_attribute( 'aria-label', '' !== $title ? $title : $kind );
-			$p->set_attribute( 'style', 'display:none' );
+			$p->set_attribute( 'style', 'visibility:hidden' );
 			++$found;
 		}
 		if ( ! $found ) {
 			return $html;
 		}
 		$html = $p->get_updated_html();
-		$js   = '<style>.speedpilot-facade{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:16/9;background:#111;color:#fff;border:0;font:inherit;cursor:pointer}</style>'
-			. '<script id="speedpilot-facades">document.querySelectorAll("iframe[data-speedpilot-facade]").forEach(function(f){var b=document.createElement("button");b.type="button";b.className="speedpilot-facade";b.textContent="▶ Play "+f.getAttribute("data-speedpilot-facade");b.addEventListener("click",function(){var u=f.getAttribute("data-speedpilot-src");f.src=u+(u.indexOf("?")>-1?"&":"?")+"autoplay=1";f.style.display="";b.remove();});f.parentNode.insertBefore(b,f);});</script>';
+		$js   = '<style>.speedpilot-facade{position:absolute;display:block;padding:0;background:#111;color:#fff;border:0;font:inherit;cursor:pointer;text-align:center}</style>'
+			. '<script id="speedpilot-facades">document.querySelectorAll("iframe[data-speedpilot-facade]").forEach(function(f){var p=f.offsetParent||document.body;if(getComputedStyle(p).position==="static"&&p!==document.body)p.style.position="relative";var b=document.createElement("button");b.type="button";b.className="speedpilot-facade";b.textContent="\u25B6 Play "+f.getAttribute("data-speedpilot-facade");b.setAttribute("aria-label",f.getAttribute("aria-label")||"Play");function place(){b.style.left=f.offsetLeft+"px";b.style.top=f.offsetTop+"px";b.style.width=f.offsetWidth+"px";b.style.height=f.offsetHeight+"px";b.style.lineHeight=f.offsetHeight+"px";}place();addEventListener("resize",place);addEventListener("load",place);var ro=window.ResizeObserver?new ResizeObserver(place):null;if(ro){ro.observe(document.body);ro.observe(f);}b.addEventListener("click",function(){var u=f.getAttribute("data-speedpilot-src");f.src=u+(u.indexOf("?")>-1?"&":"?")+"autoplay=1";f.style.visibility="";b.remove();removeEventListener("resize",place);removeEventListener("load",place);if(ro)ro.disconnect();});p.appendChild(b);});</script>';
 		$pos  = strripos( $html, '</body>' );
 		return false === $pos ? $html . $js : substr( $html, 0, $pos ) . $js . substr( $html, $pos );
 	},

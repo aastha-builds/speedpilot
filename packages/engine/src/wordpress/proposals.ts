@@ -32,6 +32,8 @@ export interface Proposal {
   files: Array<{ path: string; data: Buffer }>;
   /** Steps that must run on the site first to fill settings (images-build). */
   prepare?: 'images-build' | 'fonts';
+  /** Areas the change alters on purpose (masked in the visual check), for example a click-to-load facade. */
+  visualMasks?: string[];
   expected: string;
   urls: string[];
   /** Why a candidate was left out (unsafe or unknown verdicts). */
@@ -70,7 +72,8 @@ function handles(diag: Record<string, AgentDiag>): { scripts: Set<string>; style
   return { scripts, styles };
 }
 
-export function buildWpProposals(inp: ProposalInputs): Proposal[] {
+/** Proposals, plus the candidates left out and why (unsafe or unknown verdicts, missing usage scan). */
+export function buildWpProposals(inp: ProposalInputs): Proposal[] & { skipped: string[] } {
   const { cfg, xray, summary, probes, diag } = inp;
   const out: Proposal[] = [];
   const pages = [...new Set(xray.captures.map((c) => c.url))];
@@ -83,7 +86,7 @@ export function buildWpProposals(inp: ProposalInputs): Proposal[] {
   const lazyLcp = probes.flatMap((p) => p.images.filter((i) => lcpUrls.includes(i.src) && (i.loading === 'lazy' || i.fetchpriority !== 'high')));
   if (lazyLcp.length) {
     const img = lazyLcp[0]!;
-    out.push(base({ id: 'wp-lcp', module: 'lcp', title: 'Load the LCP image first: no lazy loading, fetchpriority high, preload', checkIds: ['IMG-01', 'WPF-15', 'REV-03'], tier: 'T1', settings: { match: img.src.split('/').pop()!.split('?')[0], preload: true, href: img.src }, simulate: [{ type: 'lcp-eager', target: img.src.split('/').pop()!.split('?')[0]! }], prepare: 'images-build', expected: 'LCP resource load delay down', urls: pages.filter((u) => xray.captures.some((c) => c.url === u && c.lcp?.url === img.src)) }));
+    out.push(base({ id: 'wp-lcp', module: 'lcp', title: 'Load the LCP image first: no lazy loading, fetchpriority high, preload', checkIds: ['IMG-01', 'WPF-15', 'REV-03'], tier: 'T1', settings: { match: img.src.split('/').pop()!.split('?')[0], preload: true, href: img.src, rules: { urls: pages.filter((u) => xray.captures.some((c) => c.url === u && c.lcp?.url === img.src)).map(path) } }, simulate: [{ type: 'lcp-eager', target: img.src.split('/').pop()!.split('?')[0]! }], prepare: 'images-build', expected: 'LCP resource load delay down', urls: pages.filter((u) => xray.captures.some((c) => c.url === u && c.lcp?.url === img.src)) }));
   }
 
   // Images: dimensions, lazy below the fold, responsive copies (IMG-03, IMG-06, IMG-07, IMG-08, CLS-01)
@@ -93,7 +96,9 @@ export function buildWpProposals(inp: ProposalInputs): Proposal[] {
   for (const p of probes) {
     for (const i of p.images) {
       const file = i.src.split('/').pop()!.split('?')[0]!;
-      if (!i.hasDimensions && i.naturalWidth) dims[file] = [i.naturalWidth, i.naturalHeight];
+      // only where the height follows the aspect ratio (a fixed CSS height already reserves the space)
+      const aspectHeight = i.naturalWidth ? (i.renderedWidth * i.naturalHeight) / i.naturalWidth : 0;
+      if (!i.hasDimensions && i.naturalWidth && i.renderedWidth > 0 && Math.abs(i.renderedHeight - aspectHeight) <= 2) dims[file] = [i.naturalWidth, i.naturalHeight];
       if (i.naturalWidth > i.renderedWidth * 2 * 1.5 && i.renderedWidth > 0) oversized.add(i.src);
       if (!i.inFirstViewport && i.loading !== 'lazy') eagerOffscreen++;
     }
@@ -115,7 +120,8 @@ export function buildWpProposals(inp: ProposalInputs): Proposal[] {
   const dequeue: Array<{ handle: string; type: 'script' | 'style'; rules?: { templates: string[] } }> = [];
   const xrayChanges: string[] = [];
   const simulate: SimChange[] = [];
-  const skipped: string[] = [];
+  const skipSet = new Set<string>();
+  const skipped = { push: (x: string) => skipSet.add(x) };
   const handled = new Set<string>(['contact-form-7', 'wc-cart-fragments', 'swv']);
   for (const s of xray.scripts.filter((x) => !x.script.inline && x.handle && x.script.loading === 'blocking')) {
     const hdl = s.handle!;
@@ -150,7 +156,7 @@ export function buildWpProposals(inp: ProposalInputs): Proposal[] {
     }
   }
   if (Object.keys(strategy).length || dequeue.length) {
-    out.push(base({ id: 'wp-asset-control', module: 'asset-control', title: `Defer ${Object.keys(strategy).length} script(s) the X-ray proved safe, remove ${dequeue.filter((d) => !d.rules).length} unused, load ${dequeue.filter((d) => d.rules).length} only where needed`, checkIds: ['JS-01', 'JS-02', 'DOC-05', 'WPF-11', 'REV-02'], tier: 'T2', settings: { strategy, dequeue }, xrayChanges, simulate, skipped, expected: 'fewer render-blocking scripts; less JS on load' }));
+    out.push(base({ id: 'wp-asset-control', module: 'asset-control', title: `Defer ${Object.keys(strategy).length} script(s) the X-ray proved safe, remove ${dequeue.filter((d) => !d.rules).length} unused, load ${dequeue.filter((d) => d.rules).length} only where needed`, checkIds: ['JS-01', 'JS-02', 'DOC-05', 'WPF-11', 'REV-02'], tier: 'T2', settings: { strategy, dequeue }, xrayChanges, simulate, skipped: [...skipSet], expected: 'fewer render-blocking scripts; less JS on load' }));
   }
 
   // Contact Form 7 only on form pages (WPF-06), from the SAFE-05 usage scan
@@ -186,8 +192,12 @@ export function buildWpProposals(inp: ProposalInputs): Proposal[] {
     } else skipped.push(`delay:${s.handle} ${v.verdict}`);
   }
   const facades = { youtube: iframes.some((f) => /youtube/.test(f.src)), vimeo: iframes.some((f) => /vimeo/.test(f.src)), maps: iframes.some((f) => /google\.[a-z.]+\/maps/.test(f.src)) };
-  if (Object.keys(delay).length || facades.youtube || facades.vimeo || facades.maps) {
-    out.push(base({ id: 'wp-third-parties', module: 'third-parties', title: `Load ${Object.keys(delay).length} third-party widget(s) on first interaction; click-to-load facades for embeds`, checkIds: ['3P-01', '3P-04', 'VID-02', 'DOC-08', 'JS-09'], tier: 'T2', settings: { delay, facades }, xrayChanges: tpChanges, simulate: tpSim, expected: 'third-party main-thread time out of the load; no video iframe until clicked' }));
+  if (Object.keys(delay).length) {
+    out.push(base({ id: 'wp-third-parties', module: 'third-parties', title: `Load ${Object.keys(delay).length} third-party widget(s) on first interaction`, checkIds: ['3P-01', '3P-04', 'JS-09'], tier: 'T2', settings: { delay }, xrayChanges: tpChanges, simulate: tpSim, expected: 'third-party main-thread time out of the load' }));
+  }
+  if (facades.youtube || facades.vimeo || facades.maps) {
+    // a facade shows a play button where the player was: that area changes on purpose and is masked in the visual check
+    out.push(base({ id: 'wp-facades', module: 'third-parties', title: `Click-to-load facades for ${Object.entries(facades).filter(([, v]) => v).map(([k]) => k).join(', ')} embeds`, checkIds: ['VID-02', 'DOC-08'], tier: 'T2', settings: { facades }, visualMasks: ['.speedpilot-facade'], expected: 'no player iframe and its scripts until the visitor clicks play' }));
   }
 
   // Core extras (WPF-02, JS-07)
@@ -213,9 +223,16 @@ export function buildWpProposals(inp: ProposalInputs): Proposal[] {
   const extra: string[] = [];
   if (hidden.length) extra.push(`${hidden.join(',')}{opacity:1!important;transform:none!important;transition:none!important;animation:none!important}`);
   const lateTop = late[0];
-  if (lateTop) extra.push(`body{position:relative;padding-top:${lateTop.height}px}${lateTop.selector}{position:absolute;top:0;left:0;right:0;height:${lateTop.height}px;box-sizing:border-box;margin:0;overflow:hidden}`);
-  if (Object.keys(critical).length || extra.length) {
-    out.push(base({ id: 'wp-css', module: 'css', title: `Critical CSS for ${Object.keys(critical).length} template(s), full CSS async${hidden.length ? ', no entrance animation above the fold' : ''}${lateTop ? ', space reserved for the late banner' : ''}`, checkIds: ['CSS-01', 'CSS-02', ...(hidden.length ? ['DOC-04'] : []), ...(lateTop ? ['CLS-03'] : [])], tier: 'T2', settings: { critical, async: asyncHandles, extraCss: extra.join('\n') }, expected: 'no render-blocking CSS; first screen visible without waiting for scripts; CLS from late banners 0' }));
+  // an in-flow block of the banner's height takes its place (same margins as the banner had), and the banner sits on it
+  if (lateTop) extra.push(`body{position:relative}body::before{content:"";display:block;height:${lateTop.height}px}${lateTop.selector}{position:absolute;top:0;left:0;width:100%;height:${lateTop.height}px;box-sizing:border-box;margin:0;overflow:hidden}`);
+  if (Object.keys(critical).length) {
+    out.push(base({ id: 'wp-css', module: 'css', title: `Critical CSS for ${Object.keys(critical).length} template(s), full stylesheets loaded async`, checkIds: ['CSS-01', 'CSS-02'], tier: 'T2', settings: { critical, async: asyncHandles }, expected: 'no render-blocking CSS' }));
+  }
+  if (lateTop) {
+    out.push(base({ id: 'wp-reserve-banner', module: 'css', title: `Reserve ${lateTop.height}px for the banner inserted after load (${lateTop.selector})`, checkIds: ['CLS-03'], tier: 'T2', settings: { extraCss: extra[extra.length - 1] }, expected: 'no layout shift when the banner appears' }));
+  }
+  if (hidden.length) {
+    out.push(base({ id: 'wp-no-entrance-animation', module: 'css', title: `No entrance animation on first-screen elements (${hidden.slice(0, 4).join(', ')})`, checkIds: ['DOC-04'], tier: 'T2', settings: { extraCss: extra[0] }, expected: 'first screen visible without waiting for a script; LCP render delay down' }));
   }
   const preloaders = [...new Set(probes.flatMap((p) => p.preloaders))];
   if (preloaders.length) {
@@ -267,7 +284,9 @@ export function buildWpProposals(inp: ProposalInputs): Proposal[] {
   if ((inp.expiredTransients ?? 0) > 0) steps.push({ description: `Delete ${inp.expiredTransients} expired transients`, run: ['transient', 'delete', '--expired'], undo: null });
   if (steps.length) out.push(base({ id: 'wp-backend-db', module: '', title: steps.map((s) => s.description).join('; '), checkIds: [...(big.length ? ['WPB-04'] : []), ...((inp.expiredTransients ?? 0) > 0 ? ['WPB-05'] : [])], tier: 'T2', settings: {}, dbSteps: steps, expected: 'smaller alloptions load on every request; TTFB down' }));
 
-  return out;
+  const order = (p: Proposal) => (p.module === 'fonts' ? 0 : 1);
+  out.sort((a, b) => order(a) - order(b));
+  return Object.assign(out, { skipped: [...skipSet] });
 }
 
 function readSource(p: string): string {

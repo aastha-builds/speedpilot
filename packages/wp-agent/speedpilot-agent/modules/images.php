@@ -58,6 +58,12 @@ SpeedPilot_Html::add(
 			if ( is_array( $d ) && 2 === count( $d ) && null === $p->get_attribute( 'width' ) && null === $p->get_attribute( 'height' ) ) {
 				$p->set_attribute( 'width', (string) (int) $d[0] );
 				$p->set_attribute( 'height', (string) (int) $d[1] );
+				// the attributes only reserve the aspect ratio: where theme CSS sets just a width, the height stays auto, so
+				// the layout is the same as before
+				$style = (string) $p->get_attribute( 'style' );
+				if ( false === stripos( $style, 'height' ) ) {
+					$p->set_attribute( 'style', ( '' === $style ? '' : rtrim( $style, '; ' ) . ';' ) . 'height:auto' );
+				}
 			}
 			if ( $skipped ) {
 				continue;

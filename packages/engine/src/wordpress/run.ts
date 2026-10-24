@@ -12,6 +12,8 @@ import { fetchDiag } from './apply.js';
 
 export interface WpOptimizeInputs {
   proposals: Proposal[];
+  /** Candidates left out, with the reason. */
+  skipped: string[];
   probes: ProbeResult[];
   dir: string;
 }
@@ -52,5 +54,6 @@ export async function planWordPress(root: string, site: string, o: { stage?: Sta
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'proposals.json'), JSON.stringify(proposals.map((p) => ({ ...p, files: p.files.map((f) => f.path) })), null, 1));
   writeFileSync(join(dir, 'probes.json'), JSON.stringify(probes.map((p) => ({ ...p, criticalCss: `${p.criticalCss.length} bytes` })), null, 1));
-  return { proposals, probes, dir };
+  writeFileSync(join(dir, 'skipped.json'), JSON.stringify(proposals.skipped, null, 1));
+  return { proposals: [...proposals], skipped: proposals.skipped, probes, dir };
 }

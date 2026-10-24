@@ -24,7 +24,19 @@ export function visualDiff(a: string, b: string, diffOut?: string): { ratio: num
     return out;
   };
   const diff = new PNG({ width: w, height: h });
-  const n = pixelmatch(pad(A), pad(B), diff.data, w, h, { threshold: 0.1, includeAA: false });
+  // masked areas (#ff00ff) in either screenshot are left out of the comparison
+  const da = pad(A);
+  const db = pad(B);
+  const isMask = (d: Buffer, i: number) => d[i] === 255 && d[i + 1] === 0 && d[i + 2] === 255;
+  for (let i = 0; i < da.length; i += 4) {
+    if (isMask(da, i) || isMask(db, i)) {
+      da[i] = db[i] = 255;
+      da[i + 1] = db[i + 1] = 0;
+      da[i + 2] = db[i + 2] = 255;
+      da[i + 3] = db[i + 3] = 255;
+    }
+  }
+  const n = pixelmatch(da, db, diff.data, w, h, { threshold: 0.1, includeAA: false });
   if (diffOut && n > 0) writeFileSync(diffOut, PNG.sync.write(diff));
   return { ratio: n / (w * h), diffPixels: n, total: w * h, sizeChanged: A.width !== B.width || A.height !== B.height };
 }
@@ -69,14 +81,18 @@ export function compareCaptures(base: Capture, now: Capture, cfg: SiteConfig, di
       visual.evidence.push(u.earlyPaint.screenshot);
     }
     // console: new error or warning signatures
-    const newSigs = u.console.filter((s) => !b.console.includes(s));
+    // errors the test environment causes (site.yaml ignoreErrors: hosts the test machine cannot reach) are not the site's
+    const ignored = (t: string) => cfg.ignoreErrors.some((x) => t.includes(x));
+    const allNewFailed = u.failed.filter((f) => !b.failed.some((g) => g.url === f.url && g.status === f.status));
+    const failedOnlyIgnored = allNewFailed.length > 0 && allNewFailed.every((f) => ignored(f.url));
+    const newSigs = u.console.filter((s) => !b.console.includes(s) && !ignored(s) && !(failedOnlyIgnored && s.startsWith('Failed to load resource')));
     if (newSigs.length) {
       consoleC.pass = false;
       consoleC.details.push(`${label}: ${newSigs.slice(0, 3).join(' | ')}`);
     }
     // network: new failures, mixed content, CSP violations, missing fonts or images
     const baseFailed = new Set(b.failed.map((f) => `${f.url}|${f.status ?? 'x'}`));
-    const newFailed = u.failed.filter((f) => !baseFailed.has(`${f.url}|${f.status ?? 'x'}`));
+    const newFailed = u.failed.filter((f) => !baseFailed.has(`${f.url}|${f.status ?? 'x'}`) && !ignored(f.url));
     if (newFailed.length || u.mixed.length > b.mixed.length || u.csp.length > b.csp.length) {
       network.pass = false;
       network.details.push(`${label}: ${newFailed.slice(0, 3).map((f) => `${f.status ?? 'failed'} ${f.type} ${f.url}`).join(', ')}${u.csp.length > b.csp.length ? ' new CSP violations' : ''}`);

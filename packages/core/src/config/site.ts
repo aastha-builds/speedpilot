@@ -95,6 +95,8 @@ export const siteSchema = z
     sampleSize: z.number().int().min(1).max(100).default(12),
     flows: z.array(flowSchema).default([]),
     masks: z.array(z.string()).default([]),
+    /** Console or network error substrings caused by the test environment, not the site (for example a host the test machine cannot reach). */
+    ignoreErrors: z.array(z.string()).default([]),
     neverDelay: z.array(z.string()).default([]),
     keepThirdParties: z.array(z.string()).default([]),
     thresholds: thresholdsSchema,

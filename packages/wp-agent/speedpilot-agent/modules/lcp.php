@@ -65,6 +65,11 @@ SpeedPilot_Html::add(
 			$p->remove_attribute( 'loading' );
 			$p->set_attribute( 'fetchpriority', 'high' );
 			$p->set_attribute( 'decoding', 'async' );
+			// the preload offers these candidates, so the image must offer the same ones or the preload goes unused
+			if ( ! empty( $s['imagesrcset'] ) && null === $p->get_attribute( 'srcset' ) ) {
+				$p->set_attribute( 'srcset', $s['imagesrcset'] );
+				$p->set_attribute( 'sizes', ! empty( $s['imagesizes'] ) ? $s['imagesizes'] : '100vw' );
+			}
 			break;
 		}
 		return $p->get_updated_html();

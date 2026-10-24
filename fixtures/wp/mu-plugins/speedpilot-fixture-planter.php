@@ -14,17 +14,41 @@ defined( 'ABSPATH' ) || exit;
 foreach ( array( 'update_core', 'update_plugins', 'update_themes' ) as $speedpilot_fixture_transient ) {
 	add_filter(
 		'pre_site_transient_' . $speedpilot_fixture_transient,
-		function () {
+		function () use ( $speedpilot_fixture_transient ) {
+			$checked = array();
+			if ( 'update_plugins' === $speedpilot_fixture_transient && function_exists( 'get_plugins' ) ) {
+				foreach ( get_plugins() as $file => $data ) {
+					$checked[ $file ] = $data['Version'];
+				}
+			}
+			if ( 'update_themes' === $speedpilot_fixture_transient ) {
+				foreach ( wp_get_themes() as $slug => $theme ) {
+					$checked[ $slug ] = $theme->get( 'Version' );
+				}
+			}
+			// "checked" must list the installed versions, or WordPress treats the stub as stale and asks WordPress.org
 			return (object) array(
 				'last_checked'    => time(),
 				'version_checked' => get_bloginfo( 'version' ),
+				'checked'         => $checked,
 				'updates'         => array(),
 				'response'        => array(),
+				'no_update'       => array(),
 				'translations'    => array(),
 			);
 		}
 	);
 }
+
+// WooCommerce shuffles related products on every view; the fixture keeps them in a stable order so two screenshots of
+// the same page can be compared pixel by pixel (real sites mask that block in site.yaml instead).
+add_filter( 'woocommerce_product_related_posts_shuffle', '__return_false' );
+add_filter(
+	'woocommerce_output_related_products_args',
+	function ( $args ) {
+		return array_merge( $args, array( 'orderby' => 'title', 'order' => 'asc' ) );
+	}
+);
 
 if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 	return;

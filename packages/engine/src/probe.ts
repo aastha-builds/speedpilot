@@ -10,6 +10,7 @@ export interface ProbeImage {
   naturalWidth: number;
   naturalHeight: number;
   renderedWidth: number;
+  renderedHeight: number;
   hasDimensions: boolean;
   loading: string | null;
   fetchpriority: string | null;
@@ -119,7 +120,7 @@ export async function probePage(url: string, o: { device?: Device; local?: boole
       const vh = innerHeight;
       const images = Array.from(document.images).map((img, index) => {
         const rect = img.getBoundingClientRect();
-        return { src: img.currentSrc || img.src, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, renderedWidth: Math.round(rect.width), hasDimensions: img.hasAttribute('width') && img.hasAttribute('height'), loading: img.getAttribute('loading'), fetchpriority: img.getAttribute('fetchpriority'), inFirstViewport: rect.top < vh && rect.bottom > 0, index };
+        return { src: img.currentSrc || img.src, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, renderedWidth: Math.round(rect.width), renderedHeight: Math.round(rect.height), hasDimensions: img.hasAttribute('width') && img.hasAttribute('height'), loading: img.getAttribute('loading'), fetchpriority: img.getAttribute('fetchpriority'), inFirstViewport: rect.top < vh && rect.bottom > 0, index };
       });
       const iframes = Array.from(document.querySelectorAll('iframe')).map((f) => ({ src: f.getAttribute('data-speedpilot-src') || f.src, title: f.getAttribute('title') }));
       const fontsLoaded = Array.from(document.fonts).filter((f) => f.status === 'loaded').map((f) => ({ family: f.family.replace(/["']/g, ''), weight: f.weight, style: f.style, status: f.status }));
@@ -132,7 +133,7 @@ export async function probePage(url: string, o: { device?: Device; local?: boole
         }
       }
       const hiddenAtStart = st.hidden.filter((h) => parseFloat(getComputedStyle(h.el).opacity) > 0).map((h) => ({ selector: st.sel(h.el) ?? '', reason: h.reason }));
-      const lateInserted = st.inserted.map((el) => ({ selector: st.sel(el) ?? '', height: Math.round(el.getBoundingClientRect().height), position: (el.getBoundingClientRect().top < 5 ? 'top' : 'other') as 'top' | 'other' })).filter((x) => x.height > 0);
+      const lateInserted = st.inserted.map((el) => ({ selector: st.sel(el) ?? '', height: Math.round(el.getBoundingClientRect().height * 100) / 100, position: (el.getBoundingClientRect().top < 5 ? 'top' : 'other') as 'top' | 'other' })).filter((x) => x.height > 0);
       const preloaders = Array.from(document.querySelectorAll('[id*="preload" i], [class*="preload" i], [id*="loader" i]')).filter((el) => getComputedStyle(el).display === 'none' || getComputedStyle(el).visibility === 'hidden').map((el) => st.sel(el) ?? '');
       return { images, iframes, fontsLoaded, fontFaceRules, hiddenAtStart, lateInserted, preloaders, vw: innerWidth, vh };
     });

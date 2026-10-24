@@ -133,11 +133,21 @@ export async function applyWpProposals(root: string, site: string, proposals: Pr
   const steps: ApplyStep[] = [];
   const uploadsUrl = `${new URL(cfg.local ? cfg.productionUrl : (stage === 'staging' ? cfg.stagingUrl ?? cfg.productionUrl : cfg.productionUrl)).origin}/wp-content/uploads`;
   mkdirSync(o.outDir, { recursive: true });
+  // areas a kept change alters on purpose stay masked for every later verification against the same baseline,
+  // including changes kept by an earlier run (their settings are already in the module's flags)
+  const keptMasks = new Set<string>();
+  const start = await readFlags(executorWp(root, cfg, stage, o.approval ? { operation: o.approval.operation, item: 'read-flags' } : undefined)).catch(() => undefined);
+  for (const p of proposals) {
+    const m = p.module ? start?.modules[p.module] : undefined;
+    if (p.visualMasks && m?.enabled && Object.keys(p.settings).every((k) => m.settings && k in m.settings)) p.visualMasks.forEach((x) => keptMasks.add(x));
+  }
   for (const p of proposals) {
     if (o.tiers && !o.tiers.includes(p.tier)) continue;
     if (o.only && !o.only.includes(p.id)) continue;
     const wp = executorWp(root, cfg, stage, o.approval ? { operation: o.approval.operation, item: p.id } : undefined);
     const step: ApplyStep = { proposal: p.id, module: p.module, tier: p.tier, status: 'skipped', reason: '' };
+    // what this item wrote, so an error after the write is rolled back too (CLAUDE.md rule 14)
+    let written: { module: string; prev: FlagsDoc['modules'][string] | undefined; undo: string[][] } | undefined;
     try {
       const gate = await gateProposal(p, xray, { outDir: join(o.outDir, `sim-${p.id}`), runs: o.simulationRuns, local: !!cfg.local, platform: cfg.platform, net: o.net });
       step.gate = gate;
@@ -151,6 +161,7 @@ export async function applyWpProposals(root: string, site: string, proposals: Pr
       const before = await readFlags(wp);
       const prev = p.module ? before.modules[p.module] : undefined;
       const undo: string[][] = [];
+      written = { module: p.module, prev, undo };
       for (const d of p.dbSteps) {
         if (d.exportFirst) await wp.text(d.exportFirst);
         await wp.text(d.run);
@@ -161,22 +172,33 @@ export async function applyWpProposals(root: string, site: string, proposals: Pr
         const settings = prev?.enabled ? mergeSettings(prev.settings ?? {}, p.settings) : p.settings;
         await wp.text(['speedpilot', 'enable', p.module, `--settings=${JSON.stringify(settings)}`, `--reason=${p.id}: ${p.title}`]);
       }
-      const v: VerificationResult = await verify(root, site, { stage, full: o.fullVerify, lighthouseRuns: o.verifyLighthouseRuns ?? 0 });
+      const v: VerificationResult = await verify(root, site, { stage, full: o.fullVerify, lighthouseRuns: o.verifyLighthouseRuns ?? 0, masks: [...keptMasks, ...(p.visualMasks ?? [])] });
       const failed = v.checks.filter((c) => !c.pass).map((c) => `${c.name}: ${c.details.slice(0, 3).join('; ')}`);
       step.verification = { result: v.result, failed, evidence: v.evidenceDir };
       if (v.result === 'PASS') {
         step.status = 'kept';
         step.reason = p.expected;
         step.flagsVersion = (await readFlags(wp)).version;
+        p.visualMasks?.forEach((x) => keptMasks.add(x));
       } else {
         if (p.module) await restoreModule(wp, p.module, prev, `rollback ${p.id}: verification failed`);
         for (const u of undo) await wp.text(u);
         step.status = 'rolled_back';
+        written = undefined;
         step.reason = `verification failed: ${failed.join(' | ')}`;
         log.warn({ proposal: p.id, failed }, 'change rolled back');
       }
     } catch (e) {
-      step.reason = `error: ${(e as Error).message}`;
+      step.reason = `error: ${(e as Error).message.slice(0, 500)}`;
+      if (written && step.status !== 'kept') {
+        try {
+          if (written.module) await restoreModule(wp, written.module, written.prev, `rollback ${p.id}: ${step.reason.slice(0, 100)}`);
+          for (const u of written.undo) await wp.text(u);
+          step.status = 'rolled_back';
+        } catch (e2) {
+          step.reason += `; rollback failed: ${(e2 as Error).message}`;
+        }
+      }
     }
     steps.push(step);
     o.onStep?.(step);

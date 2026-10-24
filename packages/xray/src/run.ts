@@ -73,8 +73,8 @@ async function wpVersions(root: string, cfg: ReturnType<typeof loadSite>, stage:
   const out: Record<string, string> = {};
   try {
     const wp = new WpCli(root, cfg, stage);
-    for (const p of await wp.json<Array<{ name: string; version: string; status: string }>>(['plugin', 'list', '--fields=name,version,status'])) if (p.status !== 'inactive') out[`plugin:${p.name}`] = p.version;
-    for (const t of await wp.json<Array<{ name: string; version: string; status: string }>>(['theme', 'list', '--fields=name,version,status'])) if (t.status !== 'inactive') out[`theme:${t.name}`] = t.version;
+    for (const p of await wp.json<Array<{ name: string; version: string; status: string }>>(['plugin', 'list', '--fields=name,version,status', '--skip-update-check'])) if (p.status !== 'inactive') out[`plugin:${p.name}`] = p.version;
+    for (const t of await wp.json<Array<{ name: string; version: string; status: string }>>(['theme', 'list', '--fields=name,version,status', '--skip-update-check'])) if (t.status !== 'inactive') out[`theme:${t.name}`] = t.version;
   } catch {
     /* versions are optional evidence */
   }
